@@ -4,6 +4,7 @@ const allowedOrigins = [
     "http://localhost:2801",
     "http://localhost:8087",
     "https://caretimes.netlify.app/",
+    "https://caretimes-admin.onrender.com/",
 ];
 
 module.exports = allowedOrigins;
