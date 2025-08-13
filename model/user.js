@@ -40,7 +40,15 @@ const userSchema = new Schema({
     type: {
         type: String,
         required: true,
-        enum: ["admin", "distributor", "customer"]
+        enum: ["super-admin", "admin", "distributor", "customer"]
+    },
+    role: {
+        type: String,
+        default: null
+    },
+    organization: {
+        type: String,
+        default: null
     },
     status: {
         type: String,
