@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -13,5 +13,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // api routes would go under here:
 app.use("/api/v1/auth", require("./route/authentication"));
+app.use(
+	"/api/v1/usermanagement",
+	require("./middleware/authorization"),
+	require("./route/usermanagement")
+);
 
 module.exports = app;
