@@ -4,7 +4,6 @@ const authVerificationOtp = require("../../model/authVerificationOTP");
 
 const resetPassword = async (req, res) => {
     const { email, password, confirmPassword } = req.body || {};
-    console.log(req.body)
 
     // check for complete payload
     if (!email?.trim() || !password?.trim() || !confirmPassword?.trim()) {
