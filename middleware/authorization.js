@@ -1,6 +1,12 @@
 const jwt = require("jsonwebtoken");
 const User = require("../model/user");
-const { tokenBlacklist } = require("../controller/authentication/signOut");
+const Customer = require("../model/customer");
+const {
+	adminTokenBlacklist,
+} = require("../controller/admin/authentication/signOut");
+const {
+	customerTokenBlacklist,
+} = require("../controller/customer/authentication/signOut");
 require("dotenv").config();
 
 module.exports = async (req, res, next) => {
@@ -17,7 +23,7 @@ module.exports = async (req, res, next) => {
 				status: "fail",
 				message: "Token is missing in authorization header",
 			});
-		if (tokenBlacklist.has(token))
+		if (adminTokenBlacklist.has(token) || customerTokenBlacklist.has(token))
 			return res.status(401).json({
 				status: "fail",
 				message: "Token is blacklisted",
@@ -31,13 +37,25 @@ module.exports = async (req, res, next) => {
 				message: "Invalid or expired token",
 			});
 		}
-		const user = await User.findById(decodedToken.id);
-		if (!user)
+		let account = null;
+
+		if (req.baseUrl.startsWith("/api/v1/admin-interface")) {
+			account = await User.findById(decodedToken.id);
+		} else if (req.baseUrl.startsWith("/api/v1/customer-interface")) {
+			account = await Customer.findById(decodedToken.id);
+		} else {
+			return res.status(400).json({
+				status: "fail",
+				message: "Invalid route context — interface not recognized",
+			});
+		}
+		if (!account) {
 			return res.status(404).json({
 				status: "fail",
-				message: "User not found",
+				message: "Account not found",
 			});
-		req.user = user;
+		}
+		req.user = account;
 		next();
 	} catch (err) {
 		return res.status(500).json({

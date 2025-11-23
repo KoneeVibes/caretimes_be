@@ -1,7 +1,6 @@
-const mongoose = require("mongoose");
-const appDB = require("../db/dbConnect");
 const bcrypt = require("bcrypt");
-const { Schema } = mongoose;
+const { Schema } = require("mongoose");
+const appDB = require("../db/dbConnect");
 
 const userSchema = new Schema(
 	{
@@ -44,7 +43,7 @@ const userSchema = new Schema(
 		type: {
 			type: String,
 			required: true,
-			enum: ["super-admin", "admin", "distributor", "customer"],
+			enum: ["super-admin", "admin", "distributor"],
 		},
 		role: {
 			type: String,
@@ -69,11 +68,11 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function (next) {
-    if (this.isModified("password")) {
-        const saltRounds = 10;
-        this.password = await bcrypt.hash(this.password, saltRounds);
-    }
-    next();
+	if (this.isModified("password")) {
+		const saltRounds = 10;
+		this.password = await bcrypt.hash(this.password, saltRounds);
+	}
+	next();
 });
 
 module.exports = appDB.model("User", userSchema);
