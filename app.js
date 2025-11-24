@@ -6,7 +6,21 @@ const corsOptions = require("./config/corsOption");
 const cookieParser = require("cookie-parser");
 
 // middleware
-app.options(/^\/.*$/, cors(corsOptions));
+app.use((req, res, next) => {
+	res.header("Access-Control-Allow-Origin", req.headers.origin);
+	res.header("Access-Control-Allow-Credentials", "true");
+	res.header(
+		"Access-Control-Allow-Methods",
+		"GET,POST,PUT,PATCH,DELETE,OPTIONS"
+	);
+	res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+	if (req.method === "OPTIONS") {
+		return res.status(200).end();
+	}
+
+	next();
+});
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(bodyParser.json());
