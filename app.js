@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 
 // middleware
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
