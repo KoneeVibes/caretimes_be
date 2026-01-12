@@ -18,7 +18,7 @@ const retrieveAllProduct = async (req, res) => {
 				status: 1,
 			}
 		);
-		if (!products.length > 0) {
+		if (products.length === 0) {
 			return res.status(404).json({
 				status: "success",
 				message: "Products not found",

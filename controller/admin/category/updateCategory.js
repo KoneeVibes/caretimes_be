@@ -1,8 +1,10 @@
+const { v2: cloudinary } = require("cloudinary");
 const Category = require("../../../model/category");
 const isValidString = require("../../../helper/isValidString");
 
 const updateCategory = async (req, res) => {
 	const { categoryId } = req.params || {};
+	const thumbnail = req.file?.path || null;
 	const { name, description, status } = req.body || {};
 	if (![name, status].every(isValidString)) {
 		return res.status(400).json({
@@ -11,9 +13,21 @@ const updateCategory = async (req, res) => {
 		});
 	}
 	try {
+		const foundCategory = await Category.findOne({
+			id: categoryId,
+			status: { $nin: ["defunct"] },
+		});
+		if (!foundCategory) {
+			return res.status(404).json({
+				status: "fail",
+				message: "Category not found.",
+			});
+		}
+		const oldThumbnail = foundCategory?.thumbnail;
+
 		const updatedCategory = await Category.findOneAndUpdate(
 			{ id: categoryId, status: { $nin: ["defunct"] } },
-			{ name, description, status },
+			{ name, description, thumbnail, status },
 			{ new: true }
 		);
 		if (!updatedCategory) {
@@ -21,6 +35,14 @@ const updateCategory = async (req, res) => {
 				status: "success",
 				message: "Category not found",
 			});
+		}
+
+		if (thumbnail && oldThumbnail) {
+			const oldThumbnailCloudinaryId = oldThumbnail
+				?.split("/")
+				.pop()
+				.split(".")[0];
+			await cloudinary.uploader.destroy(`category/${oldThumbnailCloudinaryId}`);
 		}
 		res.status(200).json({
 			status: "success",

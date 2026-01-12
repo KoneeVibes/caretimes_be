@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const User = require("../../../../../model/user");
+const AccessControl = require("../../../../../model/accessControl");
 const isValidString = require("../../../../../helper/isValidString");
 
 const addDistributor = async (req, res) => {
@@ -25,8 +26,9 @@ const addDistributor = async (req, res) => {
 				message: "User with this email already exists.",
 			});
 		}
+		const userId = uuidv4();
 		const user = new User({
-			id: uuidv4(),
+			id: userId,
 			firstName,
 			lastName,
 			email,
@@ -35,7 +37,8 @@ const addDistributor = async (req, res) => {
 			password: defaultPIN,
 		});
 		const savedUser = await user.save();
-		if (savedUser) {
+		const accessControl = await AccessControl.create({ id: userId });
+		if (savedUser && accessControl) {
 			return res.status(201).json({
 				status: "success",
 				message: "User successfully created",

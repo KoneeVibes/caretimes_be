@@ -45,5 +45,10 @@ app.use(
 	"/api/v1/customer-interface/product",
 	require("./route/customer/product")
 );
+app.use(
+	"/api/v1/customer-interface/cart",
+	require("./middleware/authorization"),
+	require("./route/customer/cart")
+);
 
 module.exports = app;

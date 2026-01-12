@@ -15,6 +15,10 @@ const categorySchema = new Schema(
 		description: {
 			type: String,
 		},
+		thumbnail: {
+			type: String,
+			default: null,
+		},
 		status: {
 			type: String,
 			required: true,

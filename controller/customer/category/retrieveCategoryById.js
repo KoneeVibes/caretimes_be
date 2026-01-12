@@ -11,7 +11,7 @@ const retrieveCategoryById = async (req, res) => {
 	try {
 		const category = await Category.findOne(
 			{ id: categoryId, status: { $nin: ["defunct"] } },
-			{ _id: 0, id: 1, name: 1, description: 1, status: 1 }
+			{ _id: 0, id: 1, name: 1, description: 1, thumbnail: 1, status: 1 }
 		);
 		if (!category) {
 			return res.status(404).json({
