@@ -10,6 +10,7 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.options("*", cors(corsOptions));
 
 // admin-interface:
 app.use(
