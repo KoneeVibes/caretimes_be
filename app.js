@@ -6,10 +6,7 @@ const corsOptions = require("./config/corsOption");
 const cookieParser = require("cookie-parser");
 
 // middleware
-app.set("trust proxy", 1);
-
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
