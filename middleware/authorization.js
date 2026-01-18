@@ -10,6 +10,9 @@ const {
 require("dotenv").config();
 
 module.exports = async (req, res, next) => {
+	if (req.method === "OPTIONS") {
+		return next();
+	}
 	try {
 		const authHeader = req.headers.authorization;
 		if (!authHeader)
