@@ -30,6 +30,12 @@ router.get(
 	require("../../controller/admin/product/retrieveAllProduct")
 );
 
+router.get(
+	"/overview",
+	isPermitted(resource),
+	require("../../controller/admin/product/retrieveProductOverview")
+);
+
 router.post(
 	"/add-product",
 	isPermitted(resource),

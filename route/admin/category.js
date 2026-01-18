@@ -29,6 +29,12 @@ router.get(
 	require("../../controller/admin/category/retrieveAllCategory")
 );
 
+router.get(
+	"/overview",
+	isPermitted(resource),
+	require("../../controller/admin/category/retrieveCategoryOverview")
+);
+
 router.post(
 	"/add-category",
 	isPermitted(resource),

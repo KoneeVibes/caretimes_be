@@ -1,9 +1,13 @@
 const Product = require("../../../model/product");
 
 const retrieveAllProduct = async (req, res) => {
+	const { filter } = req.query || {};
 	try {
+		const statusFilter = Array.isArray(filter)
+			? { $in: filter }
+			: filter || "active";
 		const products = await Product.find(
-			{ status: "active" },
+			{ status: statusFilter },
 			{
 				_id: 0,
 				id: 1,

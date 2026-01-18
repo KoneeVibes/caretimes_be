@@ -46,7 +46,7 @@ const productSchema = new Schema(
 			type: String,
 			required: true,
 			default: "active",
-			enum: ["active", "inactive"],
+			enum: ["active", "inactive", "pending"],
 		},
 	},
 	{ timestamps: true }
