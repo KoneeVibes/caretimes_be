@@ -2,11 +2,11 @@ const Product = require("../../../model/product");
 
 const retrieveProductOverview = async (req, res) => {
 	try {
-		const [total, active, pending, inactive] = await Promise.all([
+		const [total, active, pending, disabled] = await Promise.all([
 			Product.countDocuments(),
 			Product.countDocuments({ status: "active" }),
 			Product.countDocuments({ status: "pending" }),
-			Product.countDocuments({ status: "inactive" }),
+			Product.countDocuments({ status: "disabled" }),
 		]);
 		res.status(200).json({
 			status: "success",
@@ -14,7 +14,7 @@ const retrieveProductOverview = async (req, res) => {
 				totalProduct: total,
 				activeProduct: active,
 				pendingProduct: pending,
-				inactiveProduct: inactive,
+				disabledProduct: disabled,
 			},
 		});
 	} catch (error) {

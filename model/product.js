@@ -46,10 +46,10 @@ const productSchema = new Schema(
 			type: String,
 			required: true,
 			default: "active",
-			enum: ["active", "inactive", "pending"],
+			enum: ["active", "inactive", "pending", "disabled"],
 		},
 	},
-	{ timestamps: true }
+	{ timestamps: true },
 );
 
 module.exports = appDB.model("Product", productSchema);

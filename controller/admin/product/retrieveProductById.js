@@ -10,7 +10,10 @@ const retrieveProductById = async (req, res) => {
 	}
 	try {
 		const product = await Product.findOne(
-			{ id: productId, status: "active" },
+			{
+				id: productId,
+				status: { $in: ["active", "inactive", "pending", "disabled"] },
+			},
 			{
 				_id: 0,
 				id: 1,
@@ -19,11 +22,11 @@ const retrieveProductById = async (req, res) => {
 				stock: 1,
 				sold: 1,
 				price: 1,
-                thumbnail: 1,
-                images: 1,
-                description: 1,
+				thumbnail: 1,
+				images: 1,
+				description: 1,
 				status: 1,
-			}
+			},
 		);
 		if (!product) {
 			return res.status(404).json({

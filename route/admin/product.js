@@ -21,39 +21,51 @@ const options = {
 router.get(
 	"/single/:productId",
 	isPermitted(resource),
-	require("../../controller/admin/product/retrieveProductById")
+	require("../../controller/admin/product/retrieveProductById"),
 );
 
 router.get(
 	"/all",
 	isPermitted(resource),
-	require("../../controller/admin/product/retrieveAllProduct")
+	require("../../controller/admin/product/retrieveAllProduct"),
 );
 
 router.get(
 	"/overview",
 	isPermitted(resource),
-	require("../../controller/admin/product/retrieveProductOverview")
+	require("../../controller/admin/product/retrieveProductOverview"),
 );
 
 router.post(
 	"/add-product",
 	isPermitted(resource),
 	fileUpload(options),
-	require("../../controller/admin/product/addProduct")
+	require("../../controller/admin/product/addProduct"),
 );
 
 router.patch(
 	"/:productId/update-product",
 	isPermitted(resource),
 	fileUpload(options),
-	require("../../controller/admin/product/updateProduct")
+	require("../../controller/admin/product/updateProduct"),
+);
+
+router.patch(
+	"/:productId/approve-product",
+	isPermitted(resource),
+	require("../../controller/admin/product/approveProduct"),
+);
+
+router.patch(
+	"/:productId/disable-product",
+	isPermitted(resource),
+	require("../../controller/admin/product/disableProduct"),
 );
 
 router.delete(
 	"/single/:productId",
 	isPermitted(resource),
-	require("../../controller/admin/product/deleteProduct")
+	require("../../controller/admin/product/deleteProduct"),
 );
 
 module.exports = router;

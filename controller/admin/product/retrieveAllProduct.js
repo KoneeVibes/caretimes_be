@@ -5,7 +5,7 @@ const retrieveAllProduct = async (req, res) => {
 	try {
 		const statusFilter = Array.isArray(filter)
 			? { $in: filter }
-			: filter || "active";
+			: filter || { $in: ["active", "inactive", "pending", "disabled"] };
 		const products = await Product.find(
 			{ status: statusFilter },
 			{
@@ -20,7 +20,7 @@ const retrieveAllProduct = async (req, res) => {
 				images: 1,
 				description: 1,
 				status: 1,
-			}
+			},
 		);
 		if (products.length === 0) {
 			return res.status(404).json({

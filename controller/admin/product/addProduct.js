@@ -30,7 +30,7 @@ const addProduct = async (req, res) => {
 			price: Number(price),
 			images,
 			description,
-			status,
+			status: status.toLowerCase() === "active" ? "pending" : "inactive",
 		});
 		const savedProduct = await product.save();
 		if (savedProduct) {
