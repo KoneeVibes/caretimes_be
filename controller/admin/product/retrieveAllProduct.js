@@ -1,11 +1,17 @@
 const Product = require("../../../model/product");
 
 const retrieveAllProduct = async (req, res) => {
-	const { filter } = req.query || {};
+	const { filter, page, perPage } = req.query || {};
 	try {
 		const statusFilter = Array.isArray(filter)
 			? { $in: filter }
 			: filter || { $in: ["active", "inactive", "pending", "disabled"] };
+
+		const pageNumber = Math.max(Number(page) || 1, 1);
+		const limit = Math.max(Number(perPage) || 10, 1);
+		const skip = (pageNumber - 1) * limit;
+		const total = await Product.countDocuments(statusFilter);
+
 		const products = await Product.find(
 			{ status: statusFilter },
 			{
@@ -21,7 +27,12 @@ const retrieveAllProduct = async (req, res) => {
 				description: 1,
 				status: 1,
 			},
-		);
+		)
+			.skip(skip)
+			.limit(limit)
+			.lean()
+			.exec();
+
 		if (products.length === 0) {
 			return res.status(404).json({
 				status: "success",
@@ -32,6 +43,12 @@ const retrieveAllProduct = async (req, res) => {
 			status: "success",
 			message: "success",
 			data: products,
+			meta: {
+				page: pageNumber,
+				perPage: limit,
+				total,
+				totalPages: Math.ceil(total / limit),
+			},
 		});
 	} catch (error) {
 		console.error(error);

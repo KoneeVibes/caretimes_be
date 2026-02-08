@@ -2,8 +2,16 @@ const Product = require("../../../model/product");
 const Category = require("../../../model/category");
 
 const retrieveAllProduct = async (req, res) => {
-	const { perPage, sortBy, categories, availability, lowerLimit, upperLimit } =
-		req.query || {};
+	const {
+		page,
+		perPage,
+		sortBy,
+		sortParam,
+		categories,
+		availability,
+		lowerLimit,
+		upperLimit,
+	} = req.query || {};
 	try {
 		const filter = { status: "active" };
 		if (categories) {
@@ -14,7 +22,7 @@ const retrieveAllProduct = async (req, res) => {
 			if (categoryArray.length > 0) {
 				const categoryDocs = await Category.find(
 					{ name: { $in: categoryArray } },
-					{ id: 1 }
+					{ id: 1 },
 				)
 					.lean()
 					.exec();
@@ -46,6 +54,12 @@ const retrieveAllProduct = async (req, res) => {
 				filter.stock = 0;
 			}
 		}
+
+		const pageNumber = Math.max(Number(page) || 1, 1);
+		const limit = Math.max(Number(perPage) || 10, 1);
+		const skip = (pageNumber - 1) * limit;
+		const total = await Product.countDocuments(filter);
+
 		let query = Product.find(filter, {
 			_id: 0,
 			id: 1,
@@ -58,14 +72,22 @@ const retrieveAllProduct = async (req, res) => {
 			images: 1,
 			description: 1,
 			status: 1,
-		});
+		})
+			.skip(skip)
+			.limit(limit);
+
+		const sort = {};
+		console.log("sortParam:", sortParam);
+		if (sortParam === "best-seller") {
+			sort.sold = -1;
+		}
 		if (sortBy) {
-			const sortOrder = sortBy === "Ascending" ? 1 : -1;
-			query = query.sort({ price: sortOrder });
+			sort.price = sortBy === "Ascending" ? 1 : -1;
 		}
-		if (perPage) {
-			query = query.limit(Number(perPage));
+		if (Object.keys(sort).length) {
+			query = query.sort(sort);
 		}
+
 		const products = await query.lean().exec();
 		if (!products.length) {
 			return res.status(404).json({
@@ -77,6 +99,12 @@ const retrieveAllProduct = async (req, res) => {
 			status: "success",
 			message: "success",
 			data: products,
+			meta: {
+				page: pageNumber,
+				perPage: limit,
+				total,
+				totalPages: Math.ceil(total / limit),
+			},
 		});
 	} catch (error) {
 		console.error(error);
