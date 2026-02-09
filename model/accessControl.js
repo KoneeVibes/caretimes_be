@@ -12,9 +12,9 @@ const permissionSchema = new Schema(
 				"Orders",
 				"Inventory",
 				"Transactions",
-				"Support",
+				// "Support",
 				"Admin Management",
-				"Settings",
+				// "Settings",
 			],
 		},
 		status: {
@@ -40,9 +40,9 @@ const accessControlSchema = new Schema(
 				{ module: "Orders" },
 				{ module: "Inventory" },
 				{ module: "Transactions" },
-				{ module: "Support" },
+				// { module: "Support" },
 				{ module: "Admin Management" },
-				{ module: "Settings" },
+				// { module: "Settings" },
 			],
 			validate: {
 				validator: function (permissions) {

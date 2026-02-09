@@ -5,7 +5,6 @@ const removeProductFromCart = async (req, res) => {
 	const { id } = req.user || {};
 	const { productId } = req.params || {};
 
-	console.log(productId);
 	if (![productId].every(isValidString)) {
 		return res.status(400).json({
 			status: "fail",

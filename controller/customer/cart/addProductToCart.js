@@ -65,7 +65,7 @@ const addProductToCart = async (req, res) => {
 					unitPrice,
 				},
 			},
-			{ upsert: true, new: true }
+			{ upsert: true, new: true },
 		);
 		return res.status(200).json({
 			status: "success",

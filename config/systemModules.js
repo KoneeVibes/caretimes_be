@@ -15,18 +15,18 @@ const systemModules = [
 		name: "Transactions",
 		userType: ["super-admin", "admin", "distributor"],
 	},
-	{
-		name: "Support",
-		userType: ["super-admin", "admin", "distributor"],
-	},
+	// {
+	// 	name: "Support",
+	// 	userType: ["super-admin", "admin", "distributor"],
+	// },
 	{
 		name: "Admin Management",
 		userType: ["super-admin"],
 	},
-	{
-		name: "Settings",
-		userType: ["super-admin", "admin", "distributor"],
-	},
+	// {
+	// 	name: "Settings",
+	// 	userType: ["super-admin", "admin", "distributor"],
+	// },
 	{
 		name: "Logout",
 		userType: ["super-admin", "admin", "distributor"],

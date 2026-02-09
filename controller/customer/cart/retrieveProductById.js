@@ -12,7 +12,7 @@ const retrieveProductById = async (req, res) => {
 		});
 	}
 	try {
-		const product = await Cart.find(
+		const product = await Cart.findOne(
 			{ customerId: id, productId, status: "unpaid" },
 			{
 				_id: 0,
@@ -22,7 +22,7 @@ const retrieveProductById = async (req, res) => {
 				unitPrice: 1,
 				quantity: 1,
 				status: 1,
-			}
+			},
 		);
 		if (!product) {
 			return res.status(404).json({

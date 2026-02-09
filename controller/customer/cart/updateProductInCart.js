@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const Cart = require("../../../model/cart");
 const Product = require("../../../model/product");
 const isValidString = require("../../../helper/isValidString");
@@ -22,32 +23,48 @@ const updateProductInCart = async (req, res) => {
 	}
 
 	const qty = Number(quantity);
-	if (qty < 0) {
+	if (qty <= 0) {
 		return res.status(400).json({
 			status: "fail",
-			message: "Quantity cannot be negative",
+			message: "Quantity cannot be negative or zero",
 		});
 	}
 	try {
-		const foundProduct = await Product.findOne({ id: productId }, { stock: 1 });
+		const foundProduct = await Product.findOne(
+			{ id: productId },
+			{ price: 1, stock: 1 },
+		);
 		if (!foundProduct) {
 			return res.status(400).json({
 				status: "fail",
 				message: "Product not found",
 			});
 		}
-
-		const existingCartItem = await Cart.findOne({
-			id: productId,
-			customerId: id,
-			status: "unpaid",
-		});
-		const existingQty = existingCartItem?.quantity || 0;
-		const newTotalQty = existingQty + qty;
+		const unitPrice = Number(foundProduct?.price);
+		if (qty > foundProduct.stock) {
+			return res.status(400).json({
+				status: "fail",
+				message: `Only ${foundProduct.stock} item(s) available in stock`,
+			});
+		}
 
 		await Cart.findOneAndUpdate(
-			{ id: productId, customerId: id, status: "unpaid" },
-			{ quantity: newTotalQty }
+			{
+				customerId: id,
+				productId: productId,
+				unitPrice: unitPrice,
+				status: "unpaid",
+			},
+			{
+				quantity: qty,
+				$setOnInsert: {
+					id: uuidv4(),
+					customerId: id,
+					productId: productId,
+					unitPrice: unitPrice,
+				},
+			},
+			{ upsert: true, new: true },
 		);
 		return res.status(200).json({
 			status: "success",

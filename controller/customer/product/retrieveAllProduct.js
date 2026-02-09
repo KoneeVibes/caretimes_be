@@ -77,7 +77,6 @@ const retrieveAllProduct = async (req, res) => {
 			.limit(limit);
 
 		const sort = {};
-		console.log("sortParam:", sortParam);
 		if (sortParam === "best-seller") {
 			sort.sold = -1;
 		}
