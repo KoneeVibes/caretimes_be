@@ -6,8 +6,8 @@ const allowedOrigins = [
 	"https://caretimes.netlify.app",
 	"https://caretimes-admin.onrender.com",
 	"https://caretimes-web.onrender.com",
-	"https://shop.caretimescosmetics.com",
-	"https://www.shop.caretimescosmetics.com",
+	"https://caretimescosmetics.com",
+	"https://www.caretimescosmetics.com",
 	"https://admin.caretimescosmetics.com",
 	"https://www.admin.caretimescosmetics.com",
 ];
