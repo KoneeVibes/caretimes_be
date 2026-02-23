@@ -1,4 +1,5 @@
 const Cart = require("../../../model/cart");
+const Product = require("../../../model/product");
 const isValidString = require("../../../helper/isValidString");
 
 const retrieveProductById = async (req, res) => {
@@ -12,8 +13,24 @@ const retrieveProductById = async (req, res) => {
 		});
 	}
 	try {
-		const product = await Cart.findOne(
-			{ customerId: id, productId, status: "unpaid" },
+		const foundProduct = await Product.findOne(
+			{ id: productId },
+			{ price: 1, stock: 1 },
+		);
+		if (!foundProduct) {
+			return res.status(400).json({
+				status: "fail",
+				message: "Product not found 1",
+			});
+		}
+
+		const productInCart = await Cart.findOne(
+			{
+				customerId: id,
+				productId,
+				unitPrice: foundProduct.price,
+				status: "unpaid",
+			},
 			{
 				_id: 0,
 				id: 1,
@@ -24,7 +41,7 @@ const retrieveProductById = async (req, res) => {
 				status: 1,
 			},
 		);
-		if (!product) {
+		if (!productInCart) {
 			return res.status(404).json({
 				status: "success",
 				message: "Product not found",
@@ -33,7 +50,7 @@ const retrieveProductById = async (req, res) => {
 		res.status(200).json({
 			status: "success",
 			message: "success",
-			data: product,
+			data: productInCart,
 		});
 	} catch (error) {
 		console.error(error);

@@ -6,8 +6,8 @@ const isValidNumber = require("../../../helper/isValidNumber");
 
 const updateProductInCart = async (req, res) => {
 	const { id } = req.user || {};
-	const { quantity } = req.body || {};
 	const { productId } = req.params || {};
+	const { quantity, price } = req.body || {};
 
 	if (![productId].every(isValidString)) {
 		return res.status(400).json({
@@ -37,10 +37,17 @@ const updateProductInCart = async (req, res) => {
 		if (!foundProduct) {
 			return res.status(400).json({
 				status: "fail",
-				message: "Product not found",
+				message: "Product not found 1",
 			});
 		}
-		const unitPrice = Number(foundProduct?.price);
+		if (price && Number(price) !== Number(foundProduct.price)) {
+			return res.status(400).json({
+				status: "fail",
+				message: "Price mismatch with product price",
+			});
+		}
+
+		const unitPrice = Number(price ?? foundProduct?.price);
 		if (qty > foundProduct.stock) {
 			return res.status(400).json({
 				status: "fail",
