@@ -12,7 +12,7 @@ const signOutUser = async (req, res) => {
 			});
 		const authHeader = req.headers.authorization;
 		const token = authHeader.split(" ")[1];
-		tokenBlacklist.add(token);
+		adminTokenBlacklist.add(token);
 		res.status(200).json({
 			status: "success",
 			message: "Logged out successfully",

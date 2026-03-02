@@ -12,7 +12,7 @@ const signOutUser = async (req, res) => {
 			});
 		const authHeader = req.headers.authorization;
 		const token = authHeader.split(" ")[1];
-		tokenBlacklist.add(token);
+		customerTokenBlacklist.add(token);
 		res.status(200).json({
 			status: "success",
 			message: "Logged out successfully",
@@ -20,7 +20,7 @@ const signOutUser = async (req, res) => {
 	} catch (error) {
 		return res.status(500).json({
 			status: "fail",
-			message: "Server encountered an error. Please try again",
+			message: "Server encountered an error. Please try again.",
 		});
 	}
 };

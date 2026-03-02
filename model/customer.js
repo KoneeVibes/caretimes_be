@@ -37,6 +37,21 @@ const customerSchema = new Schema(
 			type: String,
 			required: true,
 		},
+		houseNumber: {
+			type: String,
+			default: null,
+			set: (v) => (typeof v === "string" && v.trim().length > 0 ? v : null),
+		},
+		street: {
+			type: String,
+			default: null,
+			set: (v) => (typeof v === "string" && v.trim().length > 0 ? v : null),
+		},
+		landmark: {
+			type: String,
+			default: null,
+			set: (v) => (typeof v === "string" && v.trim().length > 0 ? v : null),
+		},
 		location: {
 			type: String,
 			default: null,
@@ -49,7 +64,7 @@ const customerSchema = new Schema(
 			enum: ["active", "inactive"],
 		},
 	},
-	{ timestamps: true }
+	{ timestamps: true },
 );
 
 module.exports = appDB.model("Customer", customerSchema);
