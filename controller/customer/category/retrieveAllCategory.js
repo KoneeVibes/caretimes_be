@@ -3,8 +3,8 @@ const Category = require("../../../model/category");
 const retrieveAllCategory = async (req, res) => {
 	try {
 		const categories = await Category.find(
-			{ status: { $nin: ["defunct"] } },
-			{ _id: 0, id: 1, name: 1, description: 1, thumbnail: 1, status: 1 }
+			{ status: "active" },
+			{ _id: 0, id: 1, name: 1, description: 1, thumbnail: 1, status: 1 },
 		);
 		if (!categories.length > 0) {
 			return res.status(404).json({

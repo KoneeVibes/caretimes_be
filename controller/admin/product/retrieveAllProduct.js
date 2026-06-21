@@ -10,7 +10,7 @@ const retrieveAllProduct = async (req, res) => {
 		const pageNumber = Math.max(Number(page) || 1, 1);
 		const limit = Math.max(Number(perPage) || 10, 1);
 		const skip = (pageNumber - 1) * limit;
-		const total = await Product.countDocuments(statusFilter);
+		const total = await Product.countDocuments({ status: statusFilter });
 
 		const products = await Product.find(
 			{ status: statusFilter },
