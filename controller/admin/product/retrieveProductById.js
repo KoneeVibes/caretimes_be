@@ -1,6 +1,7 @@
 const Product = require("../../../model/product");
 
 const retrieveProductById = async (req, res) => {
+	const { id, type } = req.user;
 	const { productId } = req.params || {};
 	if (!productId) {
 		return res.status(400).json({
@@ -9,25 +10,29 @@ const retrieveProductById = async (req, res) => {
 		});
 	}
 	try {
-		const product = await Product.findOne(
-			{
-				id: productId,
-				status: { $in: ["active", "inactive", "pending", "disabled"] },
-			},
-			{
-				_id: 0,
-				id: 1,
-				name: 1,
-				category: 1,
-				stock: 1,
-				sold: 1,
-				price: 1,
-				thumbnail: 1,
-				images: 1,
-				description: 1,
-				status: 1,
-			},
-		);
+		const query = ["super-admin", "admin"].includes(type)
+			? {
+					id: productId,
+					status: { $in: ["active", "inactive", "pending", "disabled"] },
+				}
+			: {
+					id: productId,
+					insertedBy: id,
+					status: { $in: ["active", "inactive", "pending", "disabled"] },
+				};
+		const product = await Product.findOne(query, {
+			_id: 0,
+			id: 1,
+			name: 1,
+			category: 1,
+			stock: 1,
+			sold: 1,
+			price: 1,
+			thumbnail: 1,
+			images: 1,
+			description: 1,
+			status: 1,
+		});
 		if (!product) {
 			return res.status(404).json({
 				status: "success",

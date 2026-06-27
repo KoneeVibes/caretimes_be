@@ -4,6 +4,7 @@ const isValidNumber = require("../../../helper/isValidNumber");
 const isValidString = require("../../../helper/isValidString");
 
 const updateProduct = async (req, res) => {
+	const { id, type } = req.user;
 	const files = req.files || [];
 	const { productId } = req.params || {};
 	const images = files?.map((attachment) => attachment.path) || [];
@@ -23,10 +24,11 @@ const updateProduct = async (req, res) => {
 	}
 
 	try {
-		const foundProduct = await Product.findOne({
-			id: productId,
-			status: "active",
-		});
+		const query = ["super-admin", "admin"].includes(type)
+			? { id: productId }
+			: { id: productId, insertedBy: id };
+
+		const foundProduct = await Product.findOne(query);
 		if (!foundProduct) {
 			return res.status(404).json({
 				status: "fail",
@@ -36,7 +38,7 @@ const updateProduct = async (req, res) => {
 		const oldImages = foundProduct?.images || [];
 
 		const updatedProduct = await Product.findOneAndUpdate(
-			{ id: productId, status: "active" },
+			query,
 			{
 				name,
 				category: isValidString(category) ? category : null,
@@ -44,9 +46,13 @@ const updateProduct = async (req, res) => {
 				price: Number(price),
 				images: images,
 				description,
-				status,
+				status: ["super-admin", "admin"].includes(type)
+					? "active"
+					: status.toLowerCase() === "active"
+						? "pending"
+						: "inactive",
 			},
-			{ new: true }
+			{ new: true },
 		);
 		if (!updatedProduct) {
 			return res.status(404).json({
@@ -57,7 +63,7 @@ const updateProduct = async (req, res) => {
 
 		if (oldImages.length) {
 			const oldImagesCloudinaryId = oldImages.map(
-				(url) => url.split("/").pop().split(".")[0]
+				(url) => url.split("/").pop().split(".")[0],
 			);
 			for (const oldImageCloudinaryId of oldImagesCloudinaryId) {
 				await cloudinary.uploader.destroy(`product/${oldImageCloudinaryId}`);

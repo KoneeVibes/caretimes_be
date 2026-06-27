@@ -3,6 +3,7 @@ const Category = require("../../../model/category");
 const isValidString = require("../../../helper/isValidString");
 
 const addCategory = async (req, res) => {
+	const { id, type } = req.user;
 	const thumbnail = req.file?.path || null;
 	const { name, description, status } = req.body || {};
 	if (![name, status].every(isValidString)) {
@@ -18,6 +19,7 @@ const addCategory = async (req, res) => {
 			description,
 			thumbnail,
 			status,
+			insertedBy: id,
 		});
 		const savedCategory = await category.save();
 		if (savedCategory) {

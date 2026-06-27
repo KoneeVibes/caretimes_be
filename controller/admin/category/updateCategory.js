@@ -3,6 +3,7 @@ const Category = require("../../../model/category");
 const isValidString = require("../../../helper/isValidString");
 
 const updateCategory = async (req, res) => {
+	const { id, type } = req.user;
 	const { categoryId } = req.params || {};
 	const thumbnail = req.file?.path || null;
 	const { name, description, status } = req.body || {};
@@ -13,10 +14,11 @@ const updateCategory = async (req, res) => {
 		});
 	}
 	try {
-		const foundCategory = await Category.findOne({
-			id: categoryId,
-			status: { $nin: ["defunct"] },
-		});
+		const query = ["super-admin", "admin"].includes(type)
+			? { id: categoryId, status: { $nin: ["defunct"] } }
+			: { id: categoryId, status: { $nin: ["defunct"] }, insertedBy: id };
+
+		const foundCategory = await Category.findOne(query);
 		if (!foundCategory) {
 			return res.status(404).json({
 				status: "fail",
@@ -26,9 +28,9 @@ const updateCategory = async (req, res) => {
 		const oldThumbnail = foundCategory?.thumbnail;
 
 		const updatedCategory = await Category.findOneAndUpdate(
-			{ id: categoryId, status: { $nin: ["defunct"] } },
+			query,
 			{ name, description, thumbnail, status },
-			{ new: true }
+			{ new: true },
 		);
 		if (!updatedCategory) {
 			return res.status(404).json({

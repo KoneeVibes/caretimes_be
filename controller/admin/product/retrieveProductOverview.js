@@ -1,12 +1,16 @@
 const Product = require("../../../model/product");
 
 const retrieveProductOverview = async (req, res) => {
+	const { id, type } = req.user;
 	try {
+		const query = ["super-admin", "admin"].includes(type)
+			? {}
+			: { insertedBy: id };
 		const [total, active, pending, disabled] = await Promise.all([
-			Product.countDocuments(),
-			Product.countDocuments({ status: "active" }),
-			Product.countDocuments({ status: "pending" }),
-			Product.countDocuments({ status: "disabled" }),
+			Product.countDocuments({ ...query }),
+			Product.countDocuments({ ...query, status: "active" }),
+			Product.countDocuments({ ...query, status: "pending" }),
+			Product.countDocuments({ ...query, status: "disabled" }),
 		]);
 		res.status(200).json({
 			status: "success",

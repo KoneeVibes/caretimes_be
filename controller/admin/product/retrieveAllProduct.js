@@ -1,33 +1,35 @@
 const Product = require("../../../model/product");
 
 const retrieveAllProduct = async (req, res) => {
+	const { id, type } = req.user;
 	const { filter, page, perPage } = req.query || {};
 	try {
 		const statusFilter = Array.isArray(filter)
 			? { $in: filter }
 			: filter || { $in: ["active", "inactive", "pending", "disabled"] };
 
+		const query = ["super-admin", "admin"].includes(type)
+			? { status: statusFilter }
+			: { status: statusFilter, insertedBy: id };
+
 		const pageNumber = Math.max(Number(page) || 1, 1);
 		const limit = Math.max(Number(perPage) || 10, 1);
 		const skip = (pageNumber - 1) * limit;
-		const total = await Product.countDocuments({ status: statusFilter });
+		const total = await Product.countDocuments(query);
 
-		const products = await Product.find(
-			{ status: statusFilter },
-			{
-				_id: 0,
-				id: 1,
-				name: 1,
-				category: 1,
-				stock: 1,
-				sold: 1,
-				price: 1,
-				thumbnail: 1,
-				images: 1,
-				description: 1,
-				status: 1,
-			},
-		)
+		const products = await Product.find(query, {
+			_id: 0,
+			id: 1,
+			name: 1,
+			category: 1,
+			stock: 1,
+			sold: 1,
+			price: 1,
+			thumbnail: 1,
+			images: 1,
+			description: 1,
+			status: 1,
+		})
 			.skip(skip)
 			.limit(limit)
 			.lean()

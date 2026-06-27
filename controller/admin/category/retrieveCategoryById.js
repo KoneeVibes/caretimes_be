@@ -1,6 +1,7 @@
 const Category = require("../../../model/category");
 
 const retrieveCategoryById = async (req, res) => {
+	const { id, type } = req.user;
 	const { categoryId } = req.params || {};
 	if (!categoryId) {
 		return res.status(400).json({
@@ -9,10 +10,17 @@ const retrieveCategoryById = async (req, res) => {
 		});
 	}
 	try {
-		const category = await Category.findOne(
-			{ id: categoryId, status: { $nin: ["defunct"] } },
-			{ _id: 0, id: 1, name: 1, description: 1, thumbnail: 1, status: 1 }
-		);
+		const query = ["super-admin", "admin"].includes(type)
+			? { id: categoryId, status: { $nin: ["defunct"] } }
+			: { id: categoryId, status: { $nin: ["defunct"] }, insertedBy: id };
+		const category = await Category.findOne(query, {
+			_id: 0,
+			id: 1,
+			name: 1,
+			description: 1,
+			thumbnail: 1,
+			status: 1,
+		});
 		if (!category) {
 			return res.status(404).json({
 				status: "success",

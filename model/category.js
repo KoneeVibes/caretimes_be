@@ -19,6 +19,10 @@ const categorySchema = new Schema(
 			type: String,
 			default: null,
 		},
+		insertedBy: {
+			required: true,
+			type: String,
+		},
 		status: {
 			type: String,
 			required: true,
@@ -26,7 +30,7 @@ const categorySchema = new Schema(
 			enum: ["active", "inactive", "defunct"],
 		},
 	},
-	{ timestamps: true }
+	{ timestamps: true },
 );
 
 module.exports = appDB.model("Category", categorySchema);

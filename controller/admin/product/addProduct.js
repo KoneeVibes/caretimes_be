@@ -5,6 +5,7 @@ const isValidNumber = require("../../../helper/isValidNumber");
 
 const addProduct = async (req, res) => {
 	const files = req.files || [];
+	const { id, type } = req.user;
 	const images = files?.map((attachment) => attachment.path) || [];
 	const { name, category, stock, price, status, description } = req.body || {};
 
@@ -30,7 +31,12 @@ const addProduct = async (req, res) => {
 			price: Number(price),
 			images,
 			description,
-			status: status.toLowerCase() === "active" ? "pending" : "inactive",
+			insertedBy: id,
+			status: ["super-admin", "admin"].includes(type)
+				? "active"
+				: status.toLowerCase() === "active"
+					? "pending"
+					: "inactive",
 		});
 		const savedProduct = await product.save();
 		if (savedProduct) {
