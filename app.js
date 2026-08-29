@@ -11,6 +11,9 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// webhook
+app.use("/api/v1/webhook", require("./route/webhook/provider"));
+
 // admin-interface:
 app.use(
 	"/api/v1/admin-interface/auth",

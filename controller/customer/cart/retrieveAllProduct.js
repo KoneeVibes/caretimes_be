@@ -1,4 +1,4 @@
-const Cart = require("../../../model/cart");
+const { Cart } = require("../../../model/cart");
 
 const retrieveAllProductInCart = async (req, res) => {
 	const { id } = req.user || {};
@@ -13,7 +13,7 @@ const retrieveAllProductInCart = async (req, res) => {
 				unitPrice: 1,
 				quantity: 1,
 				status: 1,
-			}
+			},
 		).sort({ createdAt: 1 });
 		res.status(200).json({
 			status: "success",

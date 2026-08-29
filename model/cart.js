@@ -25,20 +25,30 @@ const cartSchema = new Schema(
 		unitPrice: {
 			type: Number,
 			required: true,
-		},
+        },
+        // unpaid - a product in the cart that has not yet been paid for via an order
+        // paid - a product in the cart that has been paid for via an order
+        // cancelled - a product in the cart that has been cancelled via an order
+        // disputed - a product in the cart that has been disputed by a customer
+        // inactive - a product in the cart that has been removed and can not be ordered
 		status: {
 			type: String,
 			required: true,
 			default: "unpaid",
-			enum: ["unpaid", "paid", "cancelled", "inactive"],
+			enum: ["unpaid", "paid", "cancelled", "inactive", "disputed"],
 		},
 	},
-	{ timestamps: true }
+	{ timestamps: true },
 );
 
 cartSchema.index(
 	{ customerId: 1, productId: 1, unitPrice: 1, status: 1 },
-	{ unique: true, partialFilterExpression: { status: "unpaid" } }
+	{ unique: true, partialFilterExpression: { status: "unpaid" } },
 );
 
-module.exports = appDB.model("Cart", cartSchema);
+const Cart = appDB.model("Cart", cartSchema);
+
+module.exports = {
+	cartSchema,
+	Cart,
+};

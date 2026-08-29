@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
-const Cart = require("../../../model/cart");
+const { Cart } = require("../../../model/cart");
 const Product = require("../../../model/product");
 const isValidString = require("../../../helper/isValidString");
 const isValidNumber = require("../../../helper/isValidNumber");

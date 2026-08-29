@@ -1,4 +1,4 @@
-const Cart = require("../../../model/cart");
+const { Cart } = require("../../../model/cart");
 const isValidString = require("../../../helper/isValidString");
 
 const removeProductFromCart = async (req, res) => {
@@ -15,7 +15,7 @@ const removeProductFromCart = async (req, res) => {
 	try {
 		await Cart.findOneAndUpdate(
 			{ id: productId, customerId: id, status: "unpaid" },
-			{ status: "inactive" }
+			{ status: "inactive" },
 		);
 		return res.status(200).json({
 			status: "success",

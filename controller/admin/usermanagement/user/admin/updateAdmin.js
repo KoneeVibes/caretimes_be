@@ -44,7 +44,7 @@ const updateAdmin = async (req, res) => {
 			data: updatedUser,
 		});
 	} catch (error) {
-		console.error(err);
+		console.error(error);
 		return res.status(500).json({
 			status: "fail",
 			message:

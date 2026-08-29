@@ -16,6 +16,8 @@ router.post(
 	require("../../controller/customer/cart/addProductToCart"),
 );
 
+router.post("/checkout", require("../../controller/customer/cart/checkout"));
+
 router.patch(
 	"/:productId/update-product",
 	require("../../controller/customer/cart/updateProductInCart"),

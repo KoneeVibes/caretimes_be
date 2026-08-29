@@ -1,4 +1,4 @@
-const Cart = require("../../../model/cart");
+const { Cart } = require("../../../model/cart");
 const Product = require("../../../model/product");
 const isValidString = require("../../../helper/isValidString");
 
