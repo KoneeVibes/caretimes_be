@@ -18,6 +18,12 @@ const paystack = async (req, res) => {
 
 		const event = req.body;
 		const dispatch = await dispatchEvent(event.event, event.data);
+		if (dispatch?.status === "fail") {
+			return res.status(500).json({
+				status: "fail",
+				message: dispatch?.message,
+			});
+		}
 
 		return res.status(200).json({
 			status: "success",

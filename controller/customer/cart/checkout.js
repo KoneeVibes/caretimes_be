@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { Cart } = require("../../../model/cart");
 const { Order } = require("../../../model/order");
+const dbConnect = require("../../../db/dbConnect");
 const Customer = require("../../../model/customer");
 const isValidString = require("../../../helper/isValidString");
 const initializeTransaction = require("../../../util/initializeTransaction");
@@ -23,9 +24,16 @@ const checkout = async (req, res) => {
 		});
 	}
 
+	const session = await dbConnect.startSession();
+	session.startTransaction();
+
 	try {
-		const foundCustomer = await Customer.findOne({ id, status: "active" });
+		const foundCustomer = await Customer.findOne({
+			id,
+			status: "active",
+		}).session(session);
 		if (!foundCustomer) {
+			await session.abortTransaction();
 			return res.status(404).json({
 				status: "fail",
 				message: "Customer not found.",
@@ -37,8 +45,9 @@ const checkout = async (req, res) => {
 			id: { $in: cartIds },
 			customerId: id,
 			status: "unpaid",
-		});
+		}).session(session);
 		if (carts.length !== cartIds.length) {
+			await session.abortTransaction();
 			return res.status(400).json({
 				status: "fail",
 				message: "One or more cart items are invalid or no longer available.",
@@ -54,6 +63,7 @@ const checkout = async (req, res) => {
 		// tie transaction initialization to order creation as a single atomic transaction
 		const transaction = await initializeTransaction(queryParams);
 		if (!transaction.status) {
+			await session.abortTransaction();
 			return res.status(404).json({
 				status: "fail",
 				message:
@@ -78,8 +88,9 @@ const checkout = async (req, res) => {
 			transactionAccessCode: accessCode,
 			transactionReference: reference,
 		});
-		const savedOrder = await order.save();
+		const savedOrder = await order.save({ session });
 		if (!savedOrder) {
+			await session.abortTransaction();
 			return res.status(500).json({
 				status: "fail",
 				message:
@@ -87,6 +98,7 @@ const checkout = async (req, res) => {
 			});
 		}
 
+		await session.commitTransaction();
 		return res.status(200).json({
 			status: "success",
 			message: "Cart checkout completed and order created successfully",
@@ -97,10 +109,13 @@ const checkout = async (req, res) => {
 		});
 	} catch (error) {
 		console.error(error);
+		await session.abortTransaction();
 		return res.status(500).json({
 			status: "fail",
 			message: "Server encountered an issue in checking out cart. Please retry",
 		});
+	} finally {
+		await session.endSession();
 	}
 };
 

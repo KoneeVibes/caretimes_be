@@ -34,6 +34,11 @@ app.use(
 	require("./middleware/authorization"),
 	require("./route/admin/product"),
 );
+app.use(
+	"/api/v1/admin-interface/order",
+	require("./middleware/authorization"),
+	require("./route/admin/order"),
+);
 
 // customer-interface:
 app.use(
