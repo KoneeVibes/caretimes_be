@@ -5,6 +5,7 @@ const dbConnect = require("../../../db/dbConnect");
 const Customer = require("../../../model/customer");
 const isValidString = require("../../../helper/isValidString");
 const initializeTransaction = require("../../../util/initializeTransaction");
+const { default: nairaToKobo } = require("../../../helper/convertNairaToKobo");
 
 const checkout = async (req, res) => {
 	const { id } = req.user || {};
@@ -58,7 +59,10 @@ const checkout = async (req, res) => {
 			(total, cart) => total + cart.unitPrice * cart.quantity,
 			0,
 		);
-		const queryParams = { email: foundCustomer?.email, amount };
+		const queryParams = {
+			email: foundCustomer?.email,
+			amount: nairaToKobo(amount),
+		};
 
 		// tie transaction initialization to order creation as a single atomic transaction
 		const transaction = await initializeTransaction(queryParams);

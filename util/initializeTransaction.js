@@ -6,6 +6,11 @@ const initializeTransaction = async (queryParams = {}) => {
 		...queryParams,
 		// channels: ["card", "bank", "ussd", "bank_transfer"],
 	};
+	console.log({
+		baseUrl: BASE_URL,
+		keyMode: SECRET_KEY?.startsWith("sk_live_") ? "live" : "test/unknown",
+		payload,
+	});
 	try {
 		const response = await fetch(`${BASE_URL}/transaction/initialize`, {
 			method: "POST",
