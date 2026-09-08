@@ -4,13 +4,8 @@ const SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const initializeTransaction = async (queryParams = {}) => {
 	const payload = {
 		...queryParams,
-		// channels: ["card", "bank", "ussd", "bank_transfer"],
+		channels: ["card", "bank", "ussd", "bank_transfer"],
 	};
-	console.log({
-		baseUrl: BASE_URL,
-		keyMode: SECRET_KEY?.startsWith("sk_live_") ? "live" : "test/unknown",
-		payload,
-	});
 	try {
 		const response = await fetch(`${BASE_URL}/transaction/initialize`, {
 			method: "POST",
