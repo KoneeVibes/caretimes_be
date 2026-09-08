@@ -4,7 +4,7 @@ const SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const initializeTransaction = async (queryParams = {}) => {
 	const payload = {
 		...queryParams,
-		channels: ["card", "bank", "ussd", "bank_transfer"],
+		// channels: ["card", "bank", "ussd", "bank_transfer"],
 	};
 	try {
 		const response = await fetch(`${BASE_URL}/transaction/initialize`, {
