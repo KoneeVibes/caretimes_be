@@ -5,7 +5,7 @@ const dbConnect = require("../../../db/dbConnect");
 const Customer = require("../../../model/customer");
 const isValidString = require("../../../helper/isValidString");
 const initializeTransaction = require("../../../util/initializeTransaction");
-const { default: nairaToKobo } = require("../../../helper/convertNairaToKobo");
+const nairaToKobo = require("../../../helper/convertNairaToKobo");
 
 const checkout = async (req, res) => {
 	const { id } = req.user || {};
