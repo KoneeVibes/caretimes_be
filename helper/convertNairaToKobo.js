@@ -1,5 +1,5 @@
-function nairaToKobo(amountInNaira) {
+const nairaToKobo = (amountInNaira) => {
 	return Math.round(amountInNaira * 100);
-}
+};
 
-export default nairaToKobo;
+module.exports = nairaToKobo;

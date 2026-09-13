@@ -10,6 +10,12 @@ router.get(
 );
 
 router.get(
+	"/overview",
+	isPermitted(resource),
+	require("../../controller/admin/order/retrieveOrderOverview"),
+);
+
+router.get(
 	"/all",
 	isPermitted(resource),
 	require("../../controller/admin/order/retrieveAllOrder"),

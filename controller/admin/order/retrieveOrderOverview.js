@@ -18,12 +18,12 @@ const retrieveOrderOverview = async (req, res) => {
 		res.status(200).json({
 			status: "success",
 			data: {
-				paidProduct: paid,
-				totalProduct: total,
-				disputedProduct: disputed,
-				cancelledProduct: cancelled,
-				fulfilledProduct: fulfilled,
-				unfulfilledProduct: unfulfilled,
+				paidOrder: paid,
+				totalOrder: total,
+				disputedOrder: disputed,
+				cancelledOrder: cancelled,
+				fulfilledOrder: fulfilled,
+				unfulfilledOrder: unfulfilled,
 			},
 		});
 	} catch (error) {
