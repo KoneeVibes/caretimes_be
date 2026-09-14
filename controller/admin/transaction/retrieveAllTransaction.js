@@ -1,3 +1,4 @@
+const koboToNaira = require("../../../helper/convertKoboToNaira");
 const listTransactions = require("../../../util/listTransactions");
 
 const retrieveAllTransaction = async (req, res) => {
@@ -20,11 +21,15 @@ const retrieveAllTransaction = async (req, res) => {
 			...(status ? { status } : {}),
 		};
 		const result = await listTransactions(query);
+		const transactions = result.data.map((item) => ({
+			...item,
+			amount: koboToNaira(item.amount),
+		}));
 
 		return res.status(200).json({
 			status: "success",
 			message: "Transactions retrieved successfully",
-			data: result.data,
+			data: transactions,
 			meta: {
 				page: result.meta.page,
 				total: result.meta.total,

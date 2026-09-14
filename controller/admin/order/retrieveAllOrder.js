@@ -39,6 +39,7 @@ const retrieveAllOrder = async (req, res) => {
 				totalPayable: 1,
 				status: 1,
 			})
+				.sort({ createdAt: -1 })
 				.skip(skip)
 				.limit(limit)
 				.lean()
