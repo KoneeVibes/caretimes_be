@@ -10,7 +10,7 @@ const retrieveCategoryById = async (req, res) => {
 		});
 	}
 	try {
-		const query = { status: { $nin: ["defunct", "inactive"] } };
+		const query = { status: { id: categoryId, status: { $nin: ["defunct"] } } };
 		// const query = ["super-admin", "admin"].includes(type)
 		// 	? { id: categoryId, status: { $nin: ["defunct"] } }
 		// 	: { id: categoryId, status: { $nin: ["defunct"] }, insertedBy: id };
