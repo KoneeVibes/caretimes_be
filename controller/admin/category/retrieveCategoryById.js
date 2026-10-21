@@ -10,9 +10,10 @@ const retrieveCategoryById = async (req, res) => {
 		});
 	}
 	try {
-		const query = ["super-admin", "admin"].includes(type)
-			? { id: categoryId, status: { $nin: ["defunct"] } }
-			: { id: categoryId, status: { $nin: ["defunct"] }, insertedBy: id };
+		const query = { status: { $nin: ["defunct", "inactive"] } };
+		// const query = ["super-admin", "admin"].includes(type)
+		// 	? { id: categoryId, status: { $nin: ["defunct"] } }
+		// 	: { id: categoryId, status: { $nin: ["defunct"] }, insertedBy: id };
 		const category = await Category.findOne(query, {
 			_id: 0,
 			id: 1,

@@ -3,9 +3,10 @@ const Category = require("../../../model/category");
 const retrieveAllCategory = async (req, res) => {
 	const { id, type } = req.user;
 	try {
-		const query = ["super-admin", "admin"].includes(type)
-			? { status: { $nin: ["defunct"] } }
-			: { status: { $nin: ["defunct"] }, insertedBy: id };
+		const query = { status: { $nin: ["defunct", "inactive"] } };
+		// const query = ["super-admin", "admin"].includes(type)
+		// 	? { status: { $nin: ["defunct"] } }
+		// 	: { status: { $nin: ["defunct"] }, insertedBy: id };
 		const categories = await Category.find(query, {
 			_id: 0,
 			id: 1,
