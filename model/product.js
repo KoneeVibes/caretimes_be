@@ -16,12 +16,14 @@ const productSchema = new Schema(
 			type: String,
 			default: null,
 		},
-		stock: {
+        stock: {
+            min: 0,
 			default: 0,
 			type: Number,
 			required: true,
 		},
-		sold: {
+        sold: {
+            min: 0,
 			default: 0,
 			type: Number,
 			required: true,

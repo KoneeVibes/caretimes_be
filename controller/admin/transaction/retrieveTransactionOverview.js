@@ -1,5 +1,5 @@
 const koboToNaira = require("../../../helper/convertKoboToNaira");
-const listTransactions = require("../../../util/listTransactions");
+const listTransactions = require("../../../util/payment/paystack/listTransactions");
 
 const DASHBOARD_CURRENCY = "NGN";
 

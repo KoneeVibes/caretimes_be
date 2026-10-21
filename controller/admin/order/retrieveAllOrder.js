@@ -2,6 +2,35 @@ const { Order } = require("../../../model/order");
 const Product = require("../../../model/product");
 const Customer = require("../../../model/customer");
 
+const roundMoney = (amount) =>
+	Math.round((amount + Number.EPSILON) * 100) / 100;
+
+const calculateOrderTotalsForItems = (order, cartItems) => {
+	const subTotal = roundMoney(
+		cartItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+	);
+
+	const originalSubTotal = Number(order.subTotal) || 0;
+	const allocationRatio =
+		originalSubTotal > 0 ? subTotal / originalSubTotal : 0;
+
+	const deliveryFee = roundMoney(
+		(Number(order.deliveryFee) || 0) * allocationRatio,
+	);
+	const tax = roundMoney((Number(order.tax) || 0) * allocationRatio);
+	const discount = roundMoney((Number(order.discount) || 0) * allocationRatio);
+
+	const totalPayable = roundMoney(subTotal + deliveryFee + tax - discount);
+
+	return {
+		subTotal,
+		deliveryFee,
+		tax,
+		discount,
+		totalPayable,
+	};
+};
+
 const retrieveAllOrder = async (req, res) => {
 	const { id, type } = req.user;
 	const { filter, page, perPage } = req.query || {};
@@ -15,9 +44,22 @@ const retrieveAllOrder = async (req, res) => {
 						$in: ["fulfilled", "paid", "unfulfilled", "cancelled", "disputed"],
 					};
 
-		const query = ["super-admin", "admin"].includes(type)
-			? { status: statusFilter }
-			: { status: statusFilter, insertedBy: id };
+		const query = { status: statusFilter };
+		let ownedProductIds = null;
+
+		if (!["super-admin", "admin"].includes(type)) {
+			const products = await Product.find({ insertedBy: id }, { _id: 0, id: 1 })
+				.lean()
+				.exec();
+
+			ownedProductIds = new Set(products.map((product) => String(product.id)));
+
+			query.cartItems = {
+				$elemMatch: {
+					productId: { $in: [...ownedProductIds] },
+				},
+			};
+		}
 
 		const pageNumber = Math.max(Number(page) || 1, 1);
 		const limit = Math.min(Math.max(Number(perPage) || 10, 1), 100);
@@ -38,6 +80,7 @@ const retrieveAllOrder = async (req, res) => {
 				discount: 1,
 				totalPayable: 1,
 				status: 1,
+				createdAt: 1,
 			})
 				.sort({ createdAt: -1 })
 				.skip(skip)
@@ -46,12 +89,25 @@ const retrieveAllOrder = async (req, res) => {
 				.exec(),
 		]);
 
+		const visibleOrders =
+			ownedProductIds === null
+				? orders
+				: orders.map((order) => ({
+						...order,
+						cartItems: (order.cartItems || []).filter((cartItem) =>
+							ownedProductIds.has(String(cartItem.productId)),
+						),
+					}));
+
 		const customerIds = [
-			...new Set(orders.map((order) => order.customerId).filter(Boolean)),
+			...new Set(
+				visibleOrders.map((order) => order.customerId).filter(Boolean),
+			),
 		];
+
 		const productIds = [
 			...new Set(
-				orders.flatMap((order) =>
+				visibleOrders.flatMap((order) =>
 					(order.cartItems || [])
 						.map((cartItem) => cartItem.productId)
 						.filter(Boolean),
@@ -94,6 +150,7 @@ const retrieveAllOrder = async (req, res) => {
 					null,
 			]),
 		);
+
 		const customerDropoffById = new Map(
 			customers.map((customer) => [
 				String(customer.id),
@@ -102,24 +159,35 @@ const retrieveAllOrder = async (req, res) => {
 					.join(" ") || null,
 			]),
 		);
+
 		const productNamesById = new Map(
 			products.map((product) => [String(product.id), product.name || null]),
 		);
+
 		const productImagesById = new Map(
 			products.map((product) => [String(product.id), product.images || null]),
 		);
 
-		const data = orders.map((order) => ({
-			...order,
-			customerName: customerNamesById.get(String(order.customerId)) ?? null,
-			deliveryAddress:
-				customerDropoffById.get(String(order.customerId)) ?? null,
-			cartItems: (order.cartItems || []).map((cartItem) => ({
-				...cartItem,
-				productName: productNamesById.get(String(cartItem.productId)) ?? null,
-				productImages: productImagesById.get(String(cartItem.productId)) ?? [],
-			})),
-		}));
+		const data = visibleOrders.map((order) => {
+			const totals =
+				ownedProductIds === null
+					? {}
+					: calculateOrderTotalsForItems(order, order.cartItems || []);
+			return {
+				...order,
+				...totals,
+				customerName: customerNamesById.get(String(order.customerId)) ?? null,
+				deliveryAddress:
+					customerDropoffById.get(String(order.customerId)) ?? null,
+				cartItems: (order.cartItems || []).map((cartItem) => ({
+					...cartItem,
+					productName: productNamesById.get(String(cartItem.productId)) ?? null,
+					productImages:
+						productImagesById.get(String(cartItem.productId)) ?? [],
+				})),
+			};
+		});
+
 		return res.status(200).json({
 			status: "success",
 			message: "success",
@@ -133,6 +201,7 @@ const retrieveAllOrder = async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Failed to retrieve orders:", error);
+
 		return res.status(500).json({
 			status: "fail",
 			message:

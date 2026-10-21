@@ -3,7 +3,7 @@ const isValidString = require("../../../../../helper/isValidString");
 
 const updateAdmin = async (req, res) => {
 	const { userId } = req.params || {};
-	const { firstName, lastName, email, phone, type } = req.body || {};
+	const { firstName, lastName, email, phone, type, bio } = req.body || {};
 	if (!firstName || !lastName || !email || !phone) {
 		return res.status(400).json({
 			status: "fail",
@@ -28,7 +28,8 @@ const updateAdmin = async (req, res) => {
 				lastName,
 				email,
 				phone,
-				type,
+                type,
+                bio,
 			},
 			{ new: true }
 		);

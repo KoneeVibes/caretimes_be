@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const User = require("../../../model/user");
-const sendOTPEmail = require("../../../util/emailOTPSender");
+const sendOTPEmail = require("../../../util/notification/nodemailer/emailOTPSender");
 const AuthVerificationOtp = require("../../../model/authVerificationOTP");
 
 const forgotPassword = async (req, res) => {
@@ -37,7 +37,7 @@ const forgotPassword = async (req, res) => {
 			email,
 			randomFourDigits,
 			"Reset Password",
-			"Password Reset"
+			"Password Reset",
 		);
 
 		return res.status(201).json({

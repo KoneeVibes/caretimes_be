@@ -1,6 +1,6 @@
-const generatePDF = require("../../../util/generatePDF");
+const generatePDF = require("../../../util/pdf/puppeteer/generatePDF");
 const koboToNaira = require("../../../helper/convertKoboToNaira");
-const fetchTransaction = require("../../../util/fetchTransaction");
+const fetchTransaction = require("../../../util/payment/paystack/fetchTransaction");
 const transactionReceiptTemplate = require("../../../view/transaction/receipt");
 
 const downloadTransactionReceipt = async (req, res) => {

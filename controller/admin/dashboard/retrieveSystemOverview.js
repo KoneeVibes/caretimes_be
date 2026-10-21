@@ -3,7 +3,7 @@ const { Order } = require("../../../model/order");
 const Product = require("../../../model/product");
 const Customer = require("../../../model/customer");
 const { Cart } = require("../../../model/cart");
-const listTransactions = require("../../../util/listTransactions");
+const listTransactions = require("../../../util/payment/paystack/listTransactions");
 const koboToNaira = require("../../../helper/convertKoboToNaira");
 
 const DASHBOARD_CURRENCY = "NGN";
@@ -39,10 +39,11 @@ const createBuckets = ({ from, to, bucket }) => {
 			cursor.setUTCDate(cursor.getUTCDate() + 1);
 		}
 	}
+
 	return buckets;
 };
 
-const getSuccessfulSales = async () => {
+const getSuccessfulSales = async (allocationByReference = null) => {
 	const perPage = 100;
 	let page = 1;
 	let pageCount = 1;
@@ -55,14 +56,24 @@ const getSuccessfulSales = async () => {
 			perPage,
 			status: "success",
 		});
+
 		pageCount = result.meta.pageCount;
 
 		for (const transaction of result.data) {
 			if (transaction.currency !== DASHBOARD_CURRENCY) continue;
 
+			let allocation = 1;
+
+			if (allocationByReference !== null) {
+				allocation = allocationByReference.get(transaction.reference);
+
+				if (allocation === undefined) continue;
+			}
+
 			transactionCount += 1;
-			totalAmount += transaction.amount;
+			totalAmount += transaction.amount * allocation;
 		}
+
 		page += 1;
 	}
 
@@ -73,7 +84,10 @@ const getSuccessfulSales = async () => {
 	};
 };
 
-const getSalesGraph = async ({ from, to, bucket }) => {
+const getSalesGraph = async (
+	{ from, to, bucket },
+	allocationByReference = null,
+) => {
 	const perPage = 100;
 	let page = 1;
 	let pageCount = 1;
@@ -89,16 +103,31 @@ const getSalesGraph = async ({ from, to, bucket }) => {
 			from,
 			to,
 		});
+
 		pageCount = result.meta.pageCount;
 
 		for (const transaction of result.data) {
 			if (transaction.currency !== DASHBOARD_CURRENCY) continue;
+
+			let allocation = 1;
+
+			if (allocationByReference !== null) {
+				allocation = allocationByReference.get(transaction.reference);
+
+				if (allocation === undefined) continue;
+			}
+
 			const transactionDate = transaction.paid_at || transaction.created_at;
 			const key = getBucketKey(transactionDate, bucket);
+
 			if (salesByBucket.has(key)) {
-				salesByBucket.set(key, salesByBucket.get(key) + transaction.amount);
+				salesByBucket.set(
+					key,
+					salesByBucket.get(key) + transaction.amount * allocation,
+				);
 			}
 		}
+
 		page += 1;
 	}
 
@@ -153,6 +182,7 @@ const getChartConfig = (period, value) => {
 };
 
 const retrieveSystemOverview = async (req, res) => {
+	const { id, type } = req.user;
 	const { period = "day", value = "7" } = req.query ?? {};
 	const chartConfig = getChartConfig(period, value);
 
@@ -164,6 +194,58 @@ const retrieveSystemOverview = async (req, res) => {
 	}
 
 	try {
+		const isAdmin = ["super-admin", "admin"].includes(type);
+
+		let scopedProductIds = null;
+		let scopedOrderQuery = {};
+		let allocationByReference = null;
+
+		if (!isAdmin) {
+			const scopedProducts = await Product.find(
+				{ insertedBy: id },
+				{ _id: 0, id: 1 },
+			).lean();
+
+			scopedProductIds = scopedProducts.map((product) => product.id);
+
+			scopedOrderQuery = {
+				cartItems: {
+					$elemMatch: {
+						productId: { $in: scopedProductIds },
+					},
+				},
+			};
+
+			const scopedOrders = await Order.find(scopedOrderQuery, {
+				_id: 0,
+				transactionReference: 1,
+				subTotal: 1,
+				cartItems: 1,
+			}).lean();
+
+			const scopedProductIdSet = new Set(scopedProductIds.map(String));
+			allocationByReference = new Map();
+
+			for (const order of scopedOrders) {
+				if (!order.transactionReference) continue;
+
+				const scopedSubTotal = (order.cartItems || []).reduce(
+					(sum, item) =>
+						scopedProductIdSet.has(String(item.productId))
+							? sum + item.quantity * item.unitPrice
+							: sum,
+					0,
+				);
+
+				const orderSubTotal = Number(order.subTotal) || 0;
+				const allocation =
+					orderSubTotal > 0 ? Math.min(scopedSubTotal / orderSubTotal, 1) : 0;
+
+				allocationByReference.set(order.transactionReference, allocation);
+			}
+		}
+
+		// Trending aggregation is intentionally unchanged.
 		const trendingPromise = Cart.aggregate([
 			{
 				$match: {
@@ -252,6 +334,8 @@ const retrieveSystemOverview = async (req, res) => {
 			},
 		]);
 
+		const orderScope = scopedOrderQuery;
+
 		const [
 			activeCustomers,
 			activeDistributors,
@@ -262,10 +346,20 @@ const retrieveSystemOverview = async (req, res) => {
 			salesGraph,
 			trendingResult,
 		] = await Promise.all([
-			Customer.countDocuments({ status: "active" }),
-			User.countDocuments({ type: "distributor", status: "active" }),
+			isAdmin
+				? Customer.countDocuments({ status: "active" })
+				: Promise.resolve(undefined),
+
+			isAdmin
+				? User.countDocuments({ type: "distributor", status: "active" })
+				: Promise.resolve(undefined),
+
 			Product.aggregate([
-				{ $match: { status: "active" } },
+				{
+					$match: isAdmin
+						? { status: "active" }
+						: { status: "active", insertedBy: id },
+				},
 				{
 					$group: {
 						_id: null,
@@ -274,10 +368,12 @@ const retrieveSystemOverview = async (req, res) => {
 					},
 				},
 			]),
-			Order.countDocuments({ status: "fulfilled" }),
-			Order.countDocuments({ status: "paid" }),
-			getSuccessfulSales(),
-			getSalesGraph(chartConfig),
+
+			Order.countDocuments({ ...orderScope, status: "fulfilled" }),
+			Order.countDocuments({ ...orderScope, status: "paid" }),
+
+			getSuccessfulSales(allocationByReference),
+			getSalesGraph(chartConfig, allocationByReference),
 			trendingPromise,
 		]);
 
@@ -291,30 +387,36 @@ const retrieveSystemOverview = async (req, res) => {
 			distributor: [],
 		};
 
+		const data = {
+			...(isAdmin
+				? {
+						customers: activeCustomers,
+						distributors: activeDistributors,
+					}
+				: {}),
+			stock: {
+				activeProducts: stock.activeProducts,
+				availableUnits: stock.availableUnits,
+			},
+			fulfilledOrders,
+			paidOrders,
+			allTimeSales,
+			graph: {
+				period: chartConfig.period,
+				value: chartConfig.value,
+				from: chartConfig.from,
+				to: chartConfig.to,
+				sales: salesGraph,
+			},
+			trending: {
+				product: trending.product,
+				distributor: trending.distributor,
+			},
+		};
+
 		return res.status(200).json({
 			status: "success",
-			data: {
-				customers: activeCustomers,
-				distributors: activeDistributors,
-				stock: {
-					activeProducts: stock.activeProducts,
-					availableUnits: stock.availableUnits,
-				},
-				fulfilledOrders,
-				paidOrders,
-				allTimeSales,
-				graph: {
-					period: chartConfig.period,
-					value: chartConfig.value,
-					from: chartConfig.from,
-					to: chartConfig.to,
-					sales: salesGraph,
-				},
-				trending: {
-					product: trending.product,
-					distributor: trending.distributor,
-				},
-			},
+			data,
 		});
 	} catch (error) {
 		console.error("Failed to retrieve system overview:", error);

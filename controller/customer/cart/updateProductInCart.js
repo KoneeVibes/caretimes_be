@@ -40,10 +40,10 @@ const updateProductInCart = async (req, res) => {
 				message: "Product not found 1",
 			});
 		}
-		if (price && Number(price) !== Number(foundProduct.price)) {
+		if (price !== undefined && Number(price) !== Number(foundProduct.price)) {
 			return res.status(400).json({
 				status: "fail",
-				message: "Price mismatch with product price",
+				message: "Cart price mismatch with current product price",
 			});
 		}
 

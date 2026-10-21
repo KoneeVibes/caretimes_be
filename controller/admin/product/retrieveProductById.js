@@ -32,6 +32,7 @@ const retrieveProductById = async (req, res) => {
 			images: 1,
 			description: 1,
 			status: 1,
+			insertedBy: 1,
 		});
 		if (!product) {
 			return res.status(404).json({

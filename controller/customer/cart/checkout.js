@@ -1,10 +1,11 @@
 const { v4: uuidv4 } = require("uuid");
 const { Cart } = require("../../../model/cart");
 const { Order } = require("../../../model/order");
+const Product = require("../../../model/product");
 const dbConnect = require("../../../db/dbConnect");
 const Customer = require("../../../model/customer");
 const isValidString = require("../../../helper/isValidString");
-const initializeTransaction = require("../../../util/initializeTransaction");
+const initializeTransaction = require("../../../util/payment/paystack/initializeTransaction");
 const nairaToKobo = require("../../../helper/convertNairaToKobo");
 
 const checkout = async (req, res) => {
@@ -26,9 +27,10 @@ const checkout = async (req, res) => {
 	}
 
 	const session = await dbConnect.startSession();
-	session.startTransaction();
 
 	try {
+		session.startTransaction();
+
 		const foundCustomer = await Customer.findOne({
 			id,
 			status: "active",
@@ -53,6 +55,39 @@ const checkout = async (req, res) => {
 				status: "fail",
 				message: "One or more cart items are invalid or no longer available.",
 			});
+		}
+
+		const requestedByProduct = new Map();
+		for (const cart of carts) {
+			requestedByProduct.set(
+				cart.productId,
+				(requestedByProduct.get(cart.productId) || 0) + cart.quantity,
+			);
+		}
+		const productIds = [...requestedByProduct.keys()];
+
+		const products = await Product.find({
+			id: { $in: productIds },
+			status: "active",
+		})
+			.session(session)
+			.lean();
+		const productsById = new Map(
+			products.map((product) => [product.id, product]),
+		);
+
+		for (const [productId, requestedQuantity] of requestedByProduct) {
+			const product = productsById.get(productId);
+			if (!product || product.stock < requestedQuantity) {
+				await session.abortTransaction();
+				return res.status(400).json({
+					status: "fail",
+					message: product
+						? `Not enough stock for "${product.name}". Please remove it from your cart or reduce its quantity.`
+						: "A product in your cart is no longer available. Please remove it and try again.",
+					productId,
+				});
+			}
 		}
 
 		const amount = carts.reduce(
@@ -100,6 +135,32 @@ const checkout = async (req, res) => {
 				message:
 					"Server encountered an issue saving this order to the db. Please contact support",
 			});
+		}
+
+		for (const [productId, requestedQuantity] of requestedByProduct) {
+			const result = await Product.updateOne(
+				{
+					id: productId,
+					status: "active",
+					stock: { $gte: requestedQuantity },
+				},
+				{
+					$inc: {
+						stock: -requestedQuantity,
+						sold: requestedQuantity,
+					},
+				},
+				{ session },
+			);
+			if (result.modifiedCount !== 1) {
+				await session.abortTransaction();
+				return res.status(400).json({
+					status: "fail",
+					message:
+						"Stock changed during checkout. Please review your cart and try again.",
+					productId,
+				});
+			}
 		}
 
 		await session.commitTransaction();

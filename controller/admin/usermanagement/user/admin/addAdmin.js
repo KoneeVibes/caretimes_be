@@ -5,7 +5,7 @@ const isValidString = require("../../../../../helper/isValidString");
 
 const addAdmin = async (req, res) => {
 	const defaultPIN = "Password@123";
-	const { firstName, lastName, email, phone, type } = req.body || {};
+	const { firstName, lastName, email, phone, type, bio } = req.body || {};
 	if (!firstName || !lastName || !email || !phone) {
 		return res.status(400).json({
 			status: "fail",
@@ -33,7 +33,8 @@ const addAdmin = async (req, res) => {
 			lastName,
 			email,
 			phone,
-			type,
+            type,
+            bio,
 			password: defaultPIN,
 		});
 		const savedUser = await user.save();

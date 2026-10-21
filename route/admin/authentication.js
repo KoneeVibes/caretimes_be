@@ -6,24 +6,37 @@ const {
 
 router.post(
 	"/sign-in",
-	require("../../controller/admin/authentication/signIn")
+	require("../../controller/admin/authentication/signIn"),
 );
 router.post(
 	"/forgot-password",
-	require("../../controller/admin/authentication/forgotPassword")
+	require("../../controller/admin/authentication/forgotPassword"),
+);
+router.get(
+	"/verify-token",
+	require("../../middleware/authorization"),
+	(req, res) => {
+		res.status(200).json({
+			valid: true,
+			user: {
+				id: req.user.id,
+				type: req.user.type,
+			},
+		});
+	},
 );
 router.post(
 	"/verify-otp",
-	require("../../controller/admin/authentication/verifyOTP")
+	require("../../controller/admin/authentication/verifyOTP"),
 );
 router.patch(
 	"/reset-password",
-	require("../../controller/admin/authentication/resetPassword")
+	require("../../controller/admin/authentication/resetPassword"),
 );
 router.post(
 	"/sign-out",
 	require("../../middleware/authorization"),
-	signOutUser
+	signOutUser,
 );
 
 module.exports = router;

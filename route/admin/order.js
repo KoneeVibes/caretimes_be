@@ -21,4 +21,22 @@ router.get(
 	require("../../controller/admin/order/retrieveAllOrder"),
 );
 
+router.patch(
+	"/:orderId/cancel-order",
+	isPermitted(resource),
+	require("../../controller/admin/order/cancelOrder"),
+);
+
+router.patch(
+	"/:orderId/fulfill-order",
+	isPermitted(resource),
+	require("../../controller/admin/order/fulfillOrder"),
+);
+
+router.patch(
+	"/:orderId/dispute-order",
+	isPermitted(resource),
+	require("../../controller/admin/order/disputeOrder"),
+);
+
 module.exports = router;
