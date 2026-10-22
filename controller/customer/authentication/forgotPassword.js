@@ -4,6 +4,12 @@ const { v4: uuidv4 } = require("uuid");
 const Customer = require("../../../model/customer");
 const sendOTPEmail = require("../../../util/notification/nodemailer/emailOTPSender");
 const AuthVerificationOtp = require("../../../model/authVerificationOTP");
+const {
+	default: sendEmail,
+} = require("../../../util/notification/resend/emailSender");
+const {
+	resetPasswordOTPNotificationTemplate,
+} = require("../../../view/authentication/ResetPasswordOTPNotification");
 
 const forgotPassword = async (req, res) => {
 	const { email } = req.body || {};
@@ -33,12 +39,17 @@ const forgotPassword = async (req, res) => {
 		});
 
 		await otp.save();
-		await sendOTPEmail(
-			email,
+		const templateConfig = {
 			randomFourDigits,
-			"Reset Password",
-			"Password Reset",
-		);
+			title: "Reset Password",
+		};
+		const html = resetPasswordOTPNotificationTemplate(templateConfig);
+		const mailConfig = {
+			email,
+			html,
+			subject: `Reset Password OTP`,
+		};
+		await sendEmail(mailConfig);
 
 		return res.status(201).json({
 			status: "success",

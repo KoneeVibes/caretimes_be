@@ -1,4 +1,3 @@
-const User = require("../../../model/customer");
 const { Cart } = require("../../../model/cart");
 const { Order } = require("../../../model/order");
 const dbConnect = require("../../../db/dbConnect");
@@ -9,11 +8,23 @@ const {
 const {
 	orderSuccessNotificationTemplate,
 } = require("../../../view/order/successNotification");
+const koboToNaira = require("../../../helper/convertKoboToNaira");
+const transactionReceiptTemplate = require("../../../view/transaction/receipt");
+const generatePDF = require("../../../util/pdf/puppeteer/generatePDF");
 
 const chargeSuccess = async (event) => {
-	const { reference } = event || {};
+	const {
+		reference,
+		channel,
+		authorization,
+		paid_at,
+		status,
+		customer,
+		amount,
+	} = event || {};
 
-	if (![reference].every(isValidString)) {
+	// if (![reference].every(isValidString)) {
+	if (![reference, channel, status].every(isValidString)) {
 		return {
 			status: "fail",
 			message: "Invalid transaction reference, Cannot Proceed",
@@ -69,33 +80,40 @@ const chargeSuccess = async (event) => {
 			};
 		}
 
-		const customer = await User.findOne({ id: foundOrder.customerId }).session(
-			session,
-		);
-		if (!customer) {
-			await session.abortTransaction();
-			return {
-				status: "fail",
-				message: "Customer not found. Contact administrator",
-			};
-		}
-
 		const templateConfig = {
-			customerName: `${customer.firstName} ${customer.lastName}`,
+			customerName: `${customer.first_name} ${customer.last_name}`,
 			orderNumber: foundOrder.transactionReference,
 			orderDate: foundOrder.createdAt,
 			totalAmount: foundOrder.totalPayable,
 			paymentStatus: "Paid",
 		};
 		const html = orderSuccessNotificationTemplate(templateConfig);
+		const query = {
+			amount: `₦${koboToNaira(amount)}`,
+			reference,
+			channel: channel
+				?.replace(/_/g, " ")
+				.replace(/\b\w/g, (character) => character.toUpperCase()),
+			bank: authorization?.bank,
+			customerEmail: customer?.email,
+			transactionDate: paid_at,
+			transactionStatus: status,
+		};
+		const template = transactionReceiptTemplate(query);
+		const buffer = await generatePDF(template);
 		const mailConfig = {
 			email: customer.email,
 			html,
 			subject: `Order Confirmed! Your Caretimes Cosmetics Order #${foundOrder.transactionReference}`,
+			attachments: [
+				{
+					filename: `receipt-${reference}.pdf`,
+					content: buffer,
+				},
+			],
 		};
 		await sendEmail(mailConfig);
 
-		// we will create a transaction record - that we will configure that table and add a record anytime a payment is successful. This will help us track all transactions and also help us in case of any disputes or chargebacks.
 		await session.commitTransaction();
 		return {
 			status: "success",
