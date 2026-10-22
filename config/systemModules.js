@@ -13,7 +13,7 @@ const systemModules = [
 	},
 	{
 		name: "Transactions",
-		userType: ["super-admin", "admin"],
+		userType: ["super-admin", "admin", "distributor"],
 	},
 	// {
 	// 	name: "Support",

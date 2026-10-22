@@ -73,5 +73,15 @@ app.use(
 	require("./middleware/authorization"),
 	require("./route/customer/usermanagement"),
 );
+app.use(
+	"/api/v1/customer-interface/order",
+	require("./middleware/authorization"),
+	require("./route/customer/order"),
+);
+app.use(
+	"/api/v1/customer-interface/transaction",
+	require("./middleware/authorization"),
+	require("./route/customer/transaction"),
+);
 
 module.exports = app;

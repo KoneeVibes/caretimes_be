@@ -47,7 +47,7 @@ const retrieveProductById = async (req, res) => {
 				message: "Product not found",
 			});
 		}
-		res.status(200).json({
+		return res.status(200).json({
 			status: "success",
 			message: "success",
 			data: productInCart,

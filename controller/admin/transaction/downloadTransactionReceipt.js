@@ -38,11 +38,11 @@ const downloadTransactionReceipt = async (req, res) => {
 
 		return res.status(200).end(buffer);
 	} catch (error) {
-		console.error("Failed to retrieve transaction:", error);
+		console.error("Failed to download transaction receipt:", error);
 		return res.status(500).json({
 			status: "fail",
 			message:
-				"Server encountered an issue retrieving transaction at this moment. Please retry.",
+				"Server encountered an issue downloading transaction receipt at this moment. Please retry.",
 		});
 	}
 };
