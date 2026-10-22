@@ -9,7 +9,7 @@ const {
 } = require("../../../util/notification/resend/emailSender");
 const {
 	resetPasswordOTPNotificationTemplate,
-} = require("../../../view/authentication/ResetPasswordOTPNotification");
+} = require("../../../view/authentication/resetPasswordOTPNotification");
 
 const forgotPassword = async (req, res) => {
 	const { email } = req.body || {};
