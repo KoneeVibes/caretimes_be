@@ -4,6 +4,12 @@ const isPermitted = require("../../middleware/permission");
 const resource = "Orders";
 
 router.get(
+	"/search",
+	isPermitted(resource),
+	require("../../controller/admin/order/searchOrder"),
+);
+
+router.get(
 	"/single/:orderId",
 	isPermitted(resource),
 	require("../../controller/admin/order/retrieveOrderById"),

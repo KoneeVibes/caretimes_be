@@ -19,6 +19,13 @@ const options = {
 };
 
 router.get(
+	"/search",
+	isPermitted(resource),
+	// if user is not permitted, then return a response else, next to controller
+	require("../../controller/admin/product/searchProduct"),
+);
+
+router.get(
 	"/single/:productId",
 	isPermitted(resource),
 	require("../../controller/admin/product/retrieveProductById"),

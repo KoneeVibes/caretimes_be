@@ -4,6 +4,7 @@ const koboToNaira = require("../../../helper/convertKoboToNaira");
 const listTransactions = require("../../../util/payment/paystack/listTransactions");
 
 const ALLOWED_STATUSES = ["failed", "success", "abandoned"];
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getDistributorAllocations = async (userId) => {
 	const products = await Product.find(
@@ -74,9 +75,23 @@ const getAllTransactions = async (status = null) => {
 	return transactions;
 };
 
+const matchesTransactionSearch = (transaction, searchRegex) => {
+	const searchableValues = [
+		transaction.reference,
+		transaction.channel,
+		transaction.amount,
+		transaction.customer?.email,
+	];
+
+	return searchableValues.some(
+		(value) =>
+			value !== null && value !== undefined && searchRegex.test(String(value)),
+	);
+};
+
 const retrieveAllTransaction = async (req, res) => {
 	const { id, type } = req.user;
-	const { filter, page, perPage } = req.query || {};
+	const { filter, page, perPage, q } = req.query || {};
 
 	try {
 		const isAdmin = ["super-admin", "admin"].includes(type);
@@ -84,7 +99,7 @@ const retrieveAllTransaction = async (req, res) => {
 		const limit = Math.min(Math.max(Number(perPage) || 10, 1), 100);
 		const status = isAdmin && ALLOWED_STATUSES.includes(filter) ? filter : null;
 
-		if (isAdmin) {
+		if (isAdmin && !q?.trim()) {
 			const result = await listTransactions({
 				page: pageNumber,
 				perPage: limit,
@@ -109,27 +124,45 @@ const retrieveAllTransaction = async (req, res) => {
 			});
 		}
 
-		const allocationByReference = await getDistributorAllocations(id);
-		const allTransactions = await getAllTransactions();
-		const scopedTransactions = allTransactions.filter((transaction) =>
-			allocationByReference.has(transaction.reference),
-		);
+		let transactions;
 
-		const total = scopedTransactions.length;
+		if (isAdmin) {
+			transactions = await getAllTransactions(status);
+			transactions = transactions.map((item) => ({
+				...item,
+				amount: koboToNaira(item.amount),
+			}));
+		} else {
+			const allocationByReference = await getDistributorAllocations(id);
+			const allTransactions = await getAllTransactions();
+
+			transactions = allTransactions
+				.filter((transaction) =>
+					allocationByReference.has(transaction.reference),
+				)
+				.map((item) => ({
+					...item,
+					amount: koboToNaira(
+						item.amount * allocationByReference.get(item.reference),
+					),
+				}));
+		}
+
+		if (q?.trim()) {
+			const searchRegex = new RegExp(escapeRegex(q.trim()), "i");
+			transactions = transactions.filter((transaction) =>
+				matchesTransactionSearch(transaction, searchRegex),
+			);
+		}
+
+		const total = transactions.length;
 		const skip = (pageNumber - 1) * limit;
-		const pageTransactions = scopedTransactions.slice(skip, skip + limit);
-
-		const transactions = pageTransactions.map((item) => ({
-			...item,
-			amount: koboToNaira(
-				item.amount * allocationByReference.get(item.reference),
-			),
-		}));
+		const pageTransactions = transactions.slice(skip, skip + limit);
 
 		return res.status(200).json({
 			status: "success",
 			message: "Transactions retrieved successfully",
-			data: transactions,
+			data: pageTransactions,
 			meta: {
 				page: pageNumber,
 				total,
