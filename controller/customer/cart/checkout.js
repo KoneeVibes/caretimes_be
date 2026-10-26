@@ -42,6 +42,23 @@ const checkout = async (req, res) => {
 				message: "Customer not found.",
 			});
 		}
+		if (
+			![
+				foundCustomer.firstName,
+				foundCustomer.lastName,
+				foundCustomer.houseNumber,
+				foundCustomer.street,
+				foundCustomer.landmark,
+				foundCustomer.location,
+			].every(isValidString)
+		) {
+			await session.abortTransaction();
+			return res.status(404).json({
+				status: "fail",
+				message:
+					"Ensure to provide the following information to support order fulfillment - firstName, lastName, houseNumber, street, landmark, location.",
+			});
+		}
 
 		const cartIds = allProduct.map((item) => item.cartId);
 		const carts = await Cart.find({
