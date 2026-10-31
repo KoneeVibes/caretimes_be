@@ -26,7 +26,7 @@ const grantUserPermission = (module) => {
 				});
 			}
 			const permission = accessControl.permissions.find(
-				(p) => p.module === module
+				(p) => p.module === module,
 			);
 			if (!permission || permission.status !== "active") {
 				return res.status(403).json({
@@ -34,7 +34,7 @@ const grantUserPermission = (module) => {
 					message: `Permission denied for module: ${module}`,
 				});
 			}
-			next();
+			return next();
 		} catch (error) {
 			console.error("Authorization error:", error);
 			return res.status(500).json({

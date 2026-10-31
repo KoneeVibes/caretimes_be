@@ -1,17 +1,35 @@
 const User = require("../../../../model/user");
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const retrieveAllUserByType = async (req, res) => {
-	const { admin, distributor, page, perPage } = req.query || {};
+	const { admin, distributor, page, perPage, q } = req.query || {};
+
 	try {
 		const userTypes = [];
 		if (admin === "true") userTypes.push("admin");
 		if (distributor === "true") userTypes.push("distributor");
 
 		const query = userTypes.length > 0 ? { type: { $in: userTypes } } : {};
+		const searchTerm = typeof q === "string" ? q.trim() : "";
+
+		if (searchTerm) {
+			const searchRegex = new RegExp(escapeRegex(searchTerm), "i");
+			query.$or = [
+				{ firstName: searchRegex },
+				{ middleName: searchRegex },
+				{ lastName: searchRegex },
+				{ email: searchRegex },
+				{ type: searchRegex },
+				{ status: searchRegex },
+				{ organization: searchRegex },
+			];
+		}
 
 		const pageNumber = Math.max(Number(page) || 1, 1);
 		const limit = Math.max(Number(perPage) || 10, 1);
 		const skip = (pageNumber - 1) * limit;
+
 		const total = await User.countDocuments(query);
 
 		const users = await User.find(query, {
@@ -19,8 +37,8 @@ const retrieveAllUserByType = async (req, res) => {
 			id: 1,
 			firstName: 1,
 			middleName: 1,
-            avatar: 1,
-            bio: 1,
+			avatar: 1,
+			bio: 1,
 			lastName: 1,
 			email: 1,
 			phone: 1,
@@ -36,13 +54,14 @@ const retrieveAllUserByType = async (req, res) => {
 			.lean()
 			.exec();
 
-		if (!users.length > 0) {
+		if (users.length === 0) {
 			return res.status(404).json({
 				status: "success",
 				message: "Users not found",
 			});
 		}
-		res.status(200).json({
+
+		return res.status(200).json({
 			status: "success",
 			message: "success",
 			data: users,

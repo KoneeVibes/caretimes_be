@@ -5,6 +5,8 @@ const Customer = require("../../../model/customer");
 const roundMoney = (amount) =>
 	Math.round((amount + Number.EPSILON) * 100) / 100;
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const calculateOrderTotalsForItems = (order, cartItems) => {
 	const subTotal = roundMoney(
 		cartItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
@@ -33,16 +35,14 @@ const calculateOrderTotalsForItems = (order, cartItems) => {
 
 const retrieveAllOrder = async (req, res) => {
 	const { id, type } = req.user;
-	const { filter, page, perPage } = req.query || {};
+	const { filter, page, perPage, q } = req.query || {};
 
 	try {
 		const statusFilter = Array.isArray(filter)
 			? { $in: filter }
-			: filter
-				? filter
-				: {
-						$in: ["fulfilled", "paid", "unfulfilled", "cancelled", "disputed"],
-					};
+			: filter || {
+					$in: ["fulfilled", "paid", "unfulfilled", "cancelled", "disputed"],
+				};
 
 		const query = { status: statusFilter };
 		let ownedProductIds = null;
@@ -59,6 +59,52 @@ const retrieveAllOrder = async (req, res) => {
 					productId: { $in: [...ownedProductIds] },
 				},
 			};
+		}
+
+		const searchTerm = typeof q === "string" ? q.trim() : "";
+
+		if (searchTerm) {
+			const searchRegex = new RegExp(escapeRegex(searchTerm), "i");
+
+			const [customers, matchingProducts] = await Promise.all([
+				Customer.find(
+					{
+						$or: [
+							{ firstName: searchRegex },
+							{ middleName: searchRegex },
+							{ lastName: searchRegex },
+							{ location: searchRegex },
+						],
+					},
+					{ _id: 0, id: 1 },
+				)
+					.lean()
+					.exec(),
+				Product.find({ name: searchRegex }, { _id: 0, id: 1 }).lean().exec(),
+			]);
+
+			const matchingCustomerIds = customers.map((customer) => customer.id);
+			const matchingProductIds = matchingProducts.map((product) => product.id);
+
+			const searchConditions = [
+				{ transactionReference: searchRegex },
+				{ transactionAccessCode: searchRegex },
+				{ status: searchRegex },
+				{ customerId: { $in: matchingCustomerIds } },
+			];
+
+			const visibleMatchingProductIds =
+				ownedProductIds === null
+					? matchingProductIds
+					: matchingProductIds.filter((productId) =>
+							ownedProductIds.has(String(productId)),
+						);
+
+			searchConditions.push({
+				"cartItems.productId": { $in: visibleMatchingProductIds },
+			});
+
+			query.$or = searchConditions;
 		}
 
 		const pageNumber = Math.max(Number(page) || 1, 1);
@@ -88,6 +134,13 @@ const retrieveAllOrder = async (req, res) => {
 				.lean()
 				.exec(),
 		]);
+
+		if (orders.length === 0) {
+			return res.status(404).json({
+				status: "success",
+				message: "Orders not found",
+			});
+		}
 
 		const visibleOrders =
 			ownedProductIds === null
@@ -173,6 +226,7 @@ const retrieveAllOrder = async (req, res) => {
 				ownedProductIds === null
 					? {}
 					: calculateOrderTotalsForItems(order, order.cartItems || []);
+
 			return {
 				...order,
 				...totals,

@@ -1,14 +1,17 @@
 const Product = require("../../../model/product");
+const User = require("../../../model/user");
 
 const retrieveProductById = async (req, res) => {
 	const { id, type } = req.user;
 	const { productId } = req.params || {};
+
 	if (!productId) {
 		return res.status(400).json({
 			status: "fail",
 			message: "Product Id not found, Cannot Proceed",
 		});
 	}
+
 	try {
 		const query = ["super-admin", "admin"].includes(type)
 			? {
@@ -20,6 +23,7 @@ const retrieveProductById = async (req, res) => {
 					insertedBy: id,
 					status: { $in: ["active", "inactive", "pending", "disabled"] },
 				};
+
 		const product = await Product.findOne(query, {
 			_id: 0,
 			id: 1,
@@ -33,17 +37,45 @@ const retrieveProductById = async (req, res) => {
 			description: 1,
 			status: 1,
 			insertedBy: 1,
-		});
+		})
+			.lean()
+			.exec();
+
 		if (!product) {
 			return res.status(404).json({
 				status: "success",
 				message: "Product not found",
 			});
 		}
-		res.status(200).json({
+
+		const user = await User.findOne(
+			{ id: product.insertedBy },
+			{
+				_id: 0,
+				firstName: 1,
+				lastName: 1,
+				email: 1,
+				organization: 1,
+				phone: 1,
+			},
+		)
+			.lean()
+			.exec();
+
+		return res.status(200).json({
 			status: "success",
 			message: "success",
-			data: product,
+			data: {
+				...product,
+				user: user
+					? {
+							name: [user.firstName, user.lastName].filter(Boolean).join(" "),
+							email: user.email,
+							organization: user.organization,
+							phone: user.phone,
+						}
+					: null,
+			},
 		});
 	} catch (error) {
 		console.error(error);

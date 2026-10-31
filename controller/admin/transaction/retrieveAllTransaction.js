@@ -98,13 +98,21 @@ const retrieveAllTransaction = async (req, res) => {
 		const pageNumber = Math.max(Number(page) || 1, 1);
 		const limit = Math.min(Math.max(Number(perPage) || 10, 1), 100);
 		const status = isAdmin && ALLOWED_STATUSES.includes(filter) ? filter : null;
+		const searchTerm = typeof q === "string" ? q.trim() : "";
 
-		if (isAdmin && !q?.trim()) {
+		if (isAdmin && !searchTerm) {
 			const result = await listTransactions({
 				page: pageNumber,
 				perPage: limit,
 				...(status ? { status } : {}),
 			});
+
+			if (result.data.length === 0) {
+				return res.status(404).json({
+					status: "success",
+					message: "Transactions not found",
+				});
+			}
 
 			const transactions = result.data.map((item) => ({
 				...item,
@@ -130,7 +138,7 @@ const retrieveAllTransaction = async (req, res) => {
 			transactions = await getAllTransactions(status);
 			transactions = transactions.map((item) => ({
 				...item,
-				amount: koboToNaira(item.amount),
+				amount: Number(item.amount),
 			}));
 		} else {
 			const allocationByReference = await getDistributorAllocations(id);
@@ -142,14 +150,14 @@ const retrieveAllTransaction = async (req, res) => {
 				)
 				.map((item) => ({
 					...item,
-					amount: koboToNaira(
+					amount: Number(
 						item.amount * allocationByReference.get(item.reference),
 					),
 				}));
 		}
 
-		if (q?.trim()) {
-			const searchRegex = new RegExp(escapeRegex(q.trim()), "i");
+		if (searchTerm) {
+			const searchRegex = new RegExp(escapeRegex(searchTerm), "i");
 			transactions = transactions.filter((transaction) =>
 				matchesTransactionSearch(transaction, searchRegex),
 			);
@@ -158,6 +166,13 @@ const retrieveAllTransaction = async (req, res) => {
 		const total = transactions.length;
 		const skip = (pageNumber - 1) * limit;
 		const pageTransactions = transactions.slice(skip, skip + limit);
+
+		if (pageTransactions.length === 0) {
+			return res.status(404).json({
+				status: "success",
+				message: "Transactions not found",
+			});
+		}
 
 		return res.status(200).json({
 			status: "success",
@@ -172,7 +187,6 @@ const retrieveAllTransaction = async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Failed to retrieve transactions:", error);
-
 		return res.status(500).json({
 			status: "fail",
 			message:

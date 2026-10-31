@@ -5,8 +5,9 @@ const isValidString = require("../../../../../helper/isValidString");
 
 const addDistributor = async (req, res) => {
 	const defaultPIN = "Password@123";
-	const { firstName, lastName, email, phone, type, bio } = req.body || {};
-	if (!firstName || !lastName || !email || !phone) {
+	const { firstName, lastName, email, phone, type, bio, organization } =
+		req.body || {};
+	if (!firstName || !lastName || !email || !phone || !organization) {
 		return res.status(400).json({
 			status: "fail",
 			message: "Incomplete User Details, Cannot Proceed",
@@ -33,8 +34,9 @@ const addDistributor = async (req, res) => {
 			lastName,
 			email,
 			phone,
-            type,
-            bio,
+			type,
+			bio,
+			organization,
 			password: defaultPIN,
 		});
 		const savedUser = await user.save();

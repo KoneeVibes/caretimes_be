@@ -3,8 +3,9 @@ const isValidString = require("../../../../../helper/isValidString");
 
 const updateAdmin = async (req, res) => {
 	const { userId } = req.params || {};
-	const { firstName, lastName, email, phone, type, bio } = req.body || {};
-	if (!firstName || !lastName || !email || !phone) {
+	const { firstName, lastName, email, phone, type, bio, organization } =
+		req.body || {};
+	if (!firstName || !lastName || !email || !phone || !organization) {
 		return res.status(400).json({
 			status: "fail",
 			message: "Incomplete User Details, Cannot Proceed",
@@ -28,10 +29,11 @@ const updateAdmin = async (req, res) => {
 				lastName,
 				email,
 				phone,
-                type,
-                bio,
+				type,
+				bio,
+				organization,
 			},
-			{ new: true }
+			{ new: true },
 		);
 		if (!updatedUser) {
 			return res.status(404).json({

@@ -1,8 +1,13 @@
 const Product = require("../../../model/product");
+const Category = require("../../../model/category");
+const User = require("../../../model/user");
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const retrieveAllProduct = async (req, res) => {
 	const { id, type } = req.user;
-	const { filter, page, perPage } = req.query || {};
+	const { filter, page, perPage, q } = req.query || {};
+
 	try {
 		const statusFilter = Array.isArray(filter)
 			? { $in: filter }
@@ -11,6 +16,32 @@ const retrieveAllProduct = async (req, res) => {
 		const query = ["super-admin", "admin"].includes(type)
 			? { status: statusFilter }
 			: { status: statusFilter, insertedBy: id };
+
+		const searchTerm = typeof q === "string" ? q.trim() : "";
+
+		if (searchTerm) {
+			const searchRegex = new RegExp(escapeRegex(searchTerm), "i");
+
+			const [categories, users] = await Promise.all([
+				Category.find({ name: searchRegex }, { _id: 0, id: 1 }).lean(),
+				User.find(
+					{
+						$or: [
+							{ firstName: searchRegex },
+							{ lastName: searchRegex },
+							{ middleName: searchRegex },
+						],
+					},
+					{ _id: 0, id: 1 },
+				).lean(),
+			]);
+
+			query.$or = [
+				{ name: searchRegex },
+				{ category: { $in: categories.map((category) => category.id) } },
+				{ insertedBy: { $in: users.map((user) => user.id) } },
+			];
+		}
 
 		const pageNumber = Math.max(Number(page) || 1, 1);
 		const limit = Math.max(Number(perPage) || 10, 1);
@@ -41,7 +72,8 @@ const retrieveAllProduct = async (req, res) => {
 				message: "Products not found",
 			});
 		}
-		res.status(200).json({
+
+		return res.status(200).json({
 			status: "success",
 			message: "success",
 			data: products,
